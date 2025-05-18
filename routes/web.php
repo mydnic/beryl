@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\MusicController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::middleware(['hasUser'])->group(function () {
+    Route::get('/', [MusicController::class, 'index']);
 });
