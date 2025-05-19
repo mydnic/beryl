@@ -1,11 +1,22 @@
 <template>
     <div>
-        <slot />
+        <Link
+            as="button"
+            href="/scan"
+            method="post"
+        >
+            Scan
+        </Link>
     </div>
 </template>
 
 <script>
 export default {
-    name: 'Layout'
+    props: {
+        musics: {
+            type: Array,
+            default: []
+        }
+    }
 }
 </script>

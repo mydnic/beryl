@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Music\MusicScanner;
+
 class MusicController extends Controller
 {
     public function index()
@@ -11,6 +13,7 @@ class MusicController extends Controller
 
     public function scan()
     {
-        return inertia('Music/Index');
+        (new MusicScanner())->handle();
+        return back();
     }
 }
