@@ -13,7 +13,7 @@ class MusicController extends Controller
 
     public function scan()
     {
-        (new MusicScanner())->handle();
+        (new MusicScanner())->scan();
         return back();
     }
 }
