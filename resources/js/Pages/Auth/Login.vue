@@ -43,6 +43,13 @@
                     />
                 </UFormField>
 
+                <UFormField>
+                    <UCheckbox
+                        v-model="form.remember"
+                        label="Se souvenir de moi"
+                    />
+                </UFormField>
+
                 <div class="text-center">
                     <UButton
                         type="submit"
@@ -55,12 +62,12 @@
         </UCard>
 
         <p class="text-center text-sm leading-6 mt-10 text-gray-500">
-            Pas encore de compte?
+            Don't have an account?
             <Link
                 href="/register"
                 class="font-semibold text-primary-600 hover:text-primary-500"
             >
-                Créez en un maintenant
+                Sign up
             </Link>
         </p>
     </div>
@@ -75,7 +82,8 @@ export default {
         return {
             form: this.$inertia.form({
                 email: '',
-                password: ''
+                password: '',
+                remember: false
             })
         }
     }

@@ -7,7 +7,21 @@ import ui from '@nuxt/ui/vite'
 export default defineConfig({
     plugins: [
         vue(),
-        ui({ inertia: true }),
+        ui({
+            inertia: true,
+            ui: {
+                colors: {
+                    primary: 'lime',
+                    neutral: 'slate'
+                }
+            },
+            autoImport: {
+                imports: ['vue']
+            },
+            components: {
+                dirs: ['resources/js/Components']
+            }
+        }),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true

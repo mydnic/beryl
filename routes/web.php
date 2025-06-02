@@ -6,4 +6,5 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['hasUser'])->group(function () {
     Route::get('/', [MusicController::class, 'index']);
     Route::post('/scan', [MusicController::class, 'scan']);
+    Route::delete('/music/{music}', [MusicController::class, 'destroy']);
 });

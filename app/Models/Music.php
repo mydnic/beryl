@@ -16,6 +16,8 @@ class Music extends Model
         'metadata' => 'array',
     ];
 
+    protected $appends = ['relative_path'];
+
     public function syncTags()
     {
         $audio = new Mp3Info($this->filepath, true);
@@ -28,5 +30,17 @@ class Music extends Model
             'all_tags' => $audio->tags
         ]);
         $this->save();
+    }
+
+    public function deleteFile()
+    {
+        if (file_exists($this->filepath)) {
+            unlink($this->filepath);
+        }
+    }
+
+    public function getRelativePathAttribute()
+    {
+        return str_replace(config('filesystems.disks.music_directory.root') . '/', '', $this->filepath);
     }
 }

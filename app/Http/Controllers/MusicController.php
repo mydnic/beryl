@@ -10,13 +10,14 @@ class MusicController extends Controller
 {
     public function index()
     {
-        return inertia('Music/Index');
+        $musics = Music::all();
+        return inertia('Music/Index', compact('musics'));
     }
 
     public function scan()
     {
         if (request()->boolean('truncate', true)) {
-        Music::truncate();
+             Music::truncate();
         }
 
         $files = (new MusicScanner())->scan();
@@ -24,6 +25,14 @@ class MusicController extends Controller
         foreach ($files as $file) {
             dispatch(new ProcessMusicFileJob($file));
         }
+
+        return back();
+    }
+
+    public function destroy(Music $music)
+    {
+        $music->deleteFile();
+        $music->delete();
 
         return back();
     }

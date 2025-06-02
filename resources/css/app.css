@@ -24,3 +24,10 @@
     --color-green-900: #0c4832;
     --color-green-950: #05291c;
 }
+
+@layer base {
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
