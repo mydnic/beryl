@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
+use App\Jobs\SearchMusicMetadataJob;
 use App\Models\Music;
 
 class MusicController extends Controller
@@ -25,6 +26,13 @@ class MusicController extends Controller
         foreach ($files as $file) {
             dispatch(new ProcessMusicFileJob($file));
         }
+
+        return back();
+    }
+
+    public function searchMetadata(Music $music)
+    {
+        dispatch(new SearchMusicMetadataJob($music));
 
         return back();
     }

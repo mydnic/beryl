@@ -29,6 +29,13 @@
                         :items="[
                             [
                                 {
+                                    label: 'Search Metadata',
+                                    icon: 'i-lucide-search',
+                                    onSelect: () => {
+                                        $inertia.post(`/music/${row.original.id}/metadata`)
+                                    }
+                                },
+                                {
                                     label: 'Delete',
                                     icon: 'i-lucide-trash',
                                     color: 'error',

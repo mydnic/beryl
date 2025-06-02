@@ -13,7 +13,7 @@ return new class extends Migration {
             $table->string('artist')->nullable();
             $table->string('title')->nullable();
             $table->string('album')->nullable();
-            $table->unsignedInteger('release_year', 4)->nullable();
+            $table->integer('release_year')->nullable();
             $table->string('genre')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
