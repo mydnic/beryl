@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->integer('release_year')->nullable();
             $table->string('genre')->nullable();
             $table->json('metadata')->nullable();
+            $table->json('musicbrainz_data')->nullable();
+            $table->boolean('musicbrainz_no_result')->default(false);
             $table->timestamps();
         });
     }

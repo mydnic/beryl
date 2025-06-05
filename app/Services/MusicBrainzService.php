@@ -32,7 +32,8 @@ class MusicBrainzService
         // Build the query string
         foreach ($params as $key => $value) {
             if (!empty($value)) {
-                $queryParams[] = "$key:\"$value\"";
+//                $queryParams[] = "$key:\"$value\"";
+                $queryParams[] = $value;
             }
         }
 
@@ -40,7 +41,7 @@ class MusicBrainzService
             return null;
         }
 
-        $query = implode(' AND ', $queryParams);
+        $query = implode(' ', $queryParams);
 
         return $this->search('recording', $query);
     }

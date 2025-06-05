@@ -37,27 +37,29 @@ class SearchMusicMetadataJob implements ShouldQueue
                 'music_id' => $this->music->id,
                 'search_params' => $searchParams
             ]);
+            $this->music->musicbrainz_no_result = true;
+            $this->music->save();
             return;
         }
 
-        // Utiliser le premier résultat (le plus pertinent)
-        $recording = $searchResults['recordings'][0];
-
-        // Si on a un ID MusicBrainz, on peut obtenir plus de détails
-        if (isset($recording['id'])) {
-            $detailedRecording = $musicBrainzService->getRecording($recording['id']);
-            if ($detailedRecording) {
-                $recording = $detailedRecording;
-            }
-        }
+//        // Utiliser le premier résultat (le plus pertinent)
+//        $recording = $searchResults['recordings'][0];
+//
+//        // Si on a un ID MusicBrainz, on peut obtenir plus de détails
+//        if (isset($recording['id'])) {
+//            $detailedRecording = $musicBrainzService->getRecording($recording['id']);
+//            if ($detailedRecording) {
+//                $recording = $detailedRecording;
+//            }
+//        }
 
         // Mettre à jour les métadonnées de la musique
-        $this->music->metadata = array_merge($this->music->metadata ?? [], [
-            'musicbrainz' => $searchResults['recordings']
-        ]);
+        $this->music->musicbrainz_data = [
+            'results' => $searchResults['recordings']
+        ];
         $this->music->save();
 
-        ld('updated');
+        sleep(60);
     }
 
     /**

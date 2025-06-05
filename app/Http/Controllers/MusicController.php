@@ -6,6 +6,7 @@ use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
 use App\Jobs\SearchMusicMetadataJob;
 use App\Models\Music;
+use Illuminate\Support\Facades\Http;
 
 class MusicController extends Controller
 {

@@ -14,6 +14,8 @@ class Music extends Model
 
     protected $casts = [
         'metadata' => 'array',
+        'musicbrainz_data' => 'array',
+        'musicbrainz_no_result' => 'boolean',
     ];
 
     protected $appends = ['relative_path'];
