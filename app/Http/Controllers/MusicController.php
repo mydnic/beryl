@@ -54,4 +54,40 @@ class MusicController extends Controller
         
         return response()->file($music->filepath);
     }
+
+    public function applyMetadata(Music $music)
+    {
+        $metadata = request()->input('metadata');
+        
+        try {
+            // Create a new getID3 writer object
+            require_once base_path('vendor/james-heinrich/getid3/getid3/getid3.php');
+            require_once base_path('vendor/james-heinrich/getid3/getid3/write.php');
+            
+            // Initialize getID3 tag writer
+            $getID3 = new \getID3_writetags();
+            $getID3->filename = $music->filepath;
+            $getID3->tagformats = ['id3v1', 'id3v2.3'];
+            $getID3->overwrite_tags = true;
+            $getID3->tag_encoding = 'UTF-8';
+            $getID3->tag_data = [
+                'title'  => [$metadata['title'] ?? ''],
+                'artist' => [$metadata['artist'] ?? ''],
+                'album'  => [$metadata['album'] ?? ''],
+                'year'   => [$metadata['year'] ?? ''],
+            ];
+            
+            // Write the tags
+            if ($getID3->WriteTags()) {
+                // Sync the tags in the database
+                $music->syncTags();
+                
+                return back()->with('success', 'Metadata applied successfully');
+            } else {
+                return back()->with('error', 'Failed to apply metadata: ' . implode(', ', $getID3->errors));
+            }
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error applying metadata: ' . $e->getMessage());
+        }
+    }
 }
