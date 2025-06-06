@@ -45,4 +45,13 @@ class MusicController extends Controller
 
         return back();
     }
+
+    public function stream(Music $music)
+    {
+        if (!file_exists($music->filepath)) {
+            abort(404);
+        }
+        
+        return response()->file($music->filepath);
+    }
 }

@@ -9,49 +9,12 @@
             </UButton>
         </div>
 
-        <div>
-            <UTable
-                :data="musics"
-                :columns="[
-                    { accessorKey: 'id', header: 'Id' },
-                    { accessorKey: 'relative_path', header: 'Filepath' },
-                    { accessorKey: 'artist', header: 'Artist' },
-                    { accessorKey: 'album', header: 'Album' },
-                    { accessorKey: 'title', header: 'Title' },
-                    { accessorKey: 'release_year', header: 'Year' },
-                    { accessorKey: 'genre', header: 'Genre' },
-                    { accessorKey: 'actions', header: '' }
-                ]"
-                class="flex-1"
-            >
-                <template #actions-cell="{ row }">
-                    <UDropdownMenu
-                        :items="[
-                            [
-                                {
-                                    label: 'Search Metadata',
-                                    icon: 'i-lucide-search',
-                                    onSelect: () => {
-                                        $inertia.post(`/music/${row.original.id}/metadata`)
-                                    }
-                                },
-                                {
-                                    label: 'Delete',
-                                    icon: 'i-lucide-trash',
-                                    color: 'error',
-                                    onSelect: deleteMusic(row.original)
-                                }
-                            ]
-                        ]"
-                    >
-                        <UButton
-                            icon="i-lucide-ellipsis-vertical"
-                            color="neutral"
-                            variant="ghost"
-                        />
-                    </UDropdownMenu>
-                </template>
-            </utable>
+        <div class="space-y-4">
+            <MusicCard
+                v-for="music in musics"
+                :key="music.id"
+                :music="music"
+            />
         </div>
     </div>
 </template>
@@ -62,14 +25,6 @@ export default {
         musics: {
             type: Array,
             default: () => []
-        }
-    },
-
-    methods: {
-        deleteMusic (music) {
-            return () => {
-                this.$inertia.delete(`/music/${music.id}`)
-            }
         }
     }
 }
