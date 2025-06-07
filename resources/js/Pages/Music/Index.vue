@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { usePoll } from '@inertiajs/vue3'
+import { useEchoPublic } from '@laravel/echo-vue'
 
 defineProps({
     musics: {
@@ -29,5 +29,11 @@ defineProps({
     }
 })
 
-usePoll(5000)
+useEchoPublic(
+    `music-added`,
+    'ProcessMusicFileJob',
+    (e) => {
+        console.log('e.order')
+    }
+)
 </script>

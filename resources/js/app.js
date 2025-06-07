@@ -1,7 +1,18 @@
 import { createApp, h } from 'vue'
 import { createInertiaApp, Link } from '@inertiajs/vue3'
 import ui from '@nuxt/ui/vue-plugin'
+import { configureEcho } from '@laravel/echo-vue'
 import Layout from './Layouts/Layout.vue'
+
+configureEcho({
+    broadcaster: 'reverb'
+    // key: import.meta.env.VITE_REVERB_APP_KEY,
+    // wsHost: import.meta.env.VITE_REVERB_HOST,
+    // wsPort: import.meta.env.VITE_REVERB_PORT,
+    // wssPort: import.meta.env.VITE_REVERB_PORT,
+    // forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+    // enabledTransports: ['ws', 'wss'],
+})
 
 createInertiaApp({
     resolve: (name) => {
