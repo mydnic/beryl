@@ -19,13 +19,15 @@
     </div>
 </template>
 
-<script>
-export default {
-    props: {
-        musics: {
-            type: Array,
-            default: () => []
-        }
+<script setup>
+import { usePoll } from '@inertiajs/vue3'
+
+defineProps({
+    musics: {
+        type: Array,
+        default: () => []
     }
-}
+})
+
+usePoll(5000)
 </script>
