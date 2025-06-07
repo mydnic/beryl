@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
 use App\Jobs\SearchMusicMetadataJob;
+use App\Jobs\SearchMusicMetadataWithDeezerJob;
 use App\Models\Music;
+use Exception;
+use getID3_writetags;
 use Illuminate\Support\Facades\Http;
 
 class MusicController extends Controller
@@ -33,7 +36,8 @@ class MusicController extends Controller
 
     public function searchMetadata(Music $music)
     {
-        dispatch(new SearchMusicMetadataJob($music));
+//        dispatch(new SearchMusicMetadataJob($music));
+        dispatch(new SearchMusicMetadataWithDeezerJob($music));
 
         return back();
     }
@@ -51,21 +55,21 @@ class MusicController extends Controller
         if (!file_exists($music->filepath)) {
             abort(404);
         }
-        
+
         return response()->file($music->filepath);
     }
 
     public function applyMetadata(Music $music)
     {
         $metadata = request()->input('metadata');
-        
+
         try {
             // Create a new getID3 writer object
             require_once base_path('vendor/james-heinrich/getid3/getid3/getid3.php');
             require_once base_path('vendor/james-heinrich/getid3/getid3/write.php');
-            
+
             // Initialize getID3 tag writer
-            $getID3 = new \getID3_writetags();
+            $getID3 = new getID3_writetags();
             $getID3->filename = $music->filepath;
             $getID3->tagformats = ['id3v1', 'id3v2.3'];
             $getID3->overwrite_tags = true;
@@ -76,17 +80,17 @@ class MusicController extends Controller
                 'album'  => [$metadata['album'] ?? ''],
                 'year'   => [$metadata['year'] ?? ''],
             ];
-            
+
             // Write the tags
             if ($getID3->WriteTags()) {
                 // Sync the tags in the database
                 $music->syncTags();
-                
+
                 return back()->with('success', 'Metadata applied successfully');
             } else {
                 return back()->with('error', 'Failed to apply metadata: ' . implode(', ', $getID3->errors));
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()->with('error', 'Error applying metadata: ' . $e->getMessage());
         }
     }

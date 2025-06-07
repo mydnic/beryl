@@ -42,24 +42,53 @@ class SearchMusicMetadataJob implements ShouldQueue
             return;
         }
 
-//        // Utiliser le premier résultat (le plus pertinent)
-//        $recording = $searchResults['recordings'][0];
-//
-//        // Si on a un ID MusicBrainz, on peut obtenir plus de détails
-//        if (isset($recording['id'])) {
-//            $detailedRecording = $musicBrainzService->getRecording($recording['id']);
-//            if ($detailedRecording) {
-//                $recording = $detailedRecording;
-//            }
-//        }
+        // Store raw API results
+        $apiResults = $this->music->api_results ?? [];
+        $apiResults['musicbrainz'] = $searchResults;
+        $this->music->api_results = $apiResults;
 
-        // Mettre à jour les métadonnées de la musique
-        $this->music->musicbrainz_data = [
-            'results' => $searchResults['recordings']
-        ];
+        // Process and store standardized results
+        $this->processAndStoreResults($searchResults['recordings']);
+
         $this->music->save();
 
         sleep(60);
+    }
+
+    /**
+     * Process and store standardized results from MusicBrainz
+     * 
+     * @param array $recordings
+     * @return void
+     */
+    protected function processAndStoreResults(array $recordings): void
+    {
+        $results = $this->music->results ?? [];
+        
+        foreach ($recordings as $recording) {
+            $artist = !empty($recording['artist-credit'][0]['name']) 
+                ? $recording['artist-credit'][0]['name'] 
+                : null;
+                
+            $album = !empty($recording['releases'][0]['title']) 
+                ? $recording['releases'][0]['title'] 
+                : null;
+                
+            $releaseYear = !empty($recording['first-release-date']) 
+                ? substr($recording['first-release-date'], 0, 4) 
+                : null;
+                
+            $results[] = [
+                'title' => $recording['title'] ?? null,
+                'artist' => $artist,
+                'album' => $album,
+                'release_year' => $releaseYear,
+                'api_source' => 'musicbrainz',
+                'source_id' => $recording['id'] ?? null,
+            ];
+        }
+        
+        $this->music->results = $results;
     }
 
     /**
