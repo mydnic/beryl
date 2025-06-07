@@ -1,6 +1,6 @@
 <template>
     <UCard>
-        <div class="flex font-semibold px-2 mb-2 text-xs">
+        <div class="flex gap-2 font-semibold px-2 mb-2 text-xs">
             <div class="flex-1 min-w-0">
                 Artist
             </div>
@@ -15,7 +15,7 @@
             </div>
             <div class="w-20" />
         </div>
-        <div class="flex text-xs bg-slate-50 dark:bg-slate-800 px-2 mb-2 py-1 items-center">
+        <div class="flex gap-2 text-xs bg-slate-50 dark:bg-slate-800 px-2 mb-2 py-1 items-center">
             <div class="flex-1 min-w-0">
                 <UBadge
                     color="success"
@@ -80,7 +80,7 @@
                 <div
                     v-for="(result, index) in displayedResults"
                     :key="result.id"
-                    class="flex font-semibold mb-2 pb-2 text-xs"
+                    class="flex gap-2 font-semibold mb-2 pb-2 text-xs"
                 >
                     <div class="flex-1 min-w-0">
                         <UBadge
