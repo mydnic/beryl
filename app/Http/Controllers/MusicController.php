@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
 use App\Jobs\SearchMusicMetadataJob;
-use App\Jobs\SearchMusicMetadataWithDeezerJob;
 use App\Models\Music;
 use Exception;
 use getID3_writetags;
@@ -15,7 +14,7 @@ class MusicController extends Controller
 {
     public function index()
     {
-        $musics = Music::all();
+        $musics = Music::query()->orderBy('id', 'desc')->get();
         return inertia('Music/Index', compact('musics'));
     }
 
@@ -36,8 +35,7 @@ class MusicController extends Controller
 
     public function searchMetadata(Music $music)
     {
-//        dispatch(new SearchMusicMetadataJob($music));
-        dispatch(new SearchMusicMetadataWithDeezerJob($music));
+        dispatch(new SearchMusicMetadataJob($music));
 
         return back();
     }

@@ -122,6 +122,7 @@
                             icon="i-lucide-check-check"
                             color="neutral"
                             variant="ghost"
+                            :loading="loading"
                             size="sm"
                             @click="applyMetadata(result)"
                         />
@@ -152,6 +153,7 @@ export default {
 
     data () {
         return {
+            loading: false,
             showAllResults: true,
             selectedResult: null
         }
@@ -179,6 +181,7 @@ export default {
         },
 
         applyMetadata (result) {
+            this.loading = true
             // Construire les métadonnées à partir du résultat sélectionné
             const metadata = {
                 title: result.title,
@@ -189,7 +192,15 @@ export default {
             }
 
             // Envoyer les métadonnées au serveur pour mise à jour
-            this.$inertia.post(`/music/${this.music.id}/apply-metadata`, { metadata, result })
+            this.$inertia.post(`/music/${this.music.id}/apply-metadata`,
+                { metadata, result },
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        this.loading = false
+                    }
+                }
+            )
 
             // Fermer le tableau de comparaison
             this.selectedResult = null

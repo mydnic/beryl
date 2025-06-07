@@ -10,6 +10,6 @@ class MusicObserver
     public function created(Music $music): void
     {
         $music->syncTags();
-//        dispatch(new SearchMusicMetadataJob($music))->delay(now()->addSeconds(5));
+        dispatch(new SearchMusicMetadataJob($music))->delay(now()->addSeconds(5));
     }
 }

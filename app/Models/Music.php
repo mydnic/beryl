@@ -22,6 +22,18 @@ class Music extends Model
 
     protected $appends = ['relative_path'];
 
+    /**
+     * Mutateur pour l'attribut release_year
+     * Convertit les valeurs vides en null
+     *
+     * @param mixed $value
+     * @return void
+     */
+    public function setReleaseYearAttribute($value)
+    {
+        $this->attributes['release_year'] = (is_null($value) || $value === '') ? null : $value;
+    }
+
     public function syncTags()
     {
         $audio = new Mp3Info($this->filepath, true);
