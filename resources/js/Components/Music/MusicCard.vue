@@ -73,27 +73,22 @@
             </div>
         </div>
         <div
-            v-if="music.musicbrainz_data"
+            v-if="music.results"
             class="mt-2 max-h-46 overflow-y-auto"
         >
             <div class="space-y-1 px-2 divide-slate-100 divide-y">
                 <div
-                    v-for="(result, index) in displayedResults"
+                    v-for="(result, index) in music.results"
                     :key="result.id"
                     class="flex gap-2 font-semibold mb-2 pb-2 text-xs"
                 >
                     <div class="flex-1 min-w-0">
                         <UBadge
-                            v-if="result['artist-credit'] && result['artist-credit'].length"
-                            :color="result['artist-credit'][0].name === music.artist ? 'success' : 'error'"
+                            v-if="result.artist"
+                            :color="result.artist === music.artist ? 'success' : 'error'"
                             variant="subtle"
                         >
-                            <span
-                                v-for="(artist, index) in result['artist-credit']"
-                                :key="index"
-                            >
-                                {{ artist.name }}{{ index < result['artist-credit'].length - 1 ? ', ' : '' }}
-                            </span>
+                            {{ result.artist }}
                         </UBadge>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -106,20 +101,20 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <UBadge
-                            v-if="result.releases && result.releases.length"
+                            v-if="result.album"
                             variant="subtle"
-                            :color="result.releases[0].title === music.album ? 'success' : 'error'"
+                            :color="result.album === music.album ? 'success' : 'error'"
                         >
-                            {{ result.releases[0].title }}
+                            {{ result.album }}
                         </UBadge>
                     </div>
                     <div class="flex-1 min-w-0">
                         <UBadge
-                            v-if="result['first-release-date']"
+                            v-if="result.release_year"
                             variant="subtle"
-                            :color="result['first-release-date'].substring(0, 4) == music.release_year ? 'success' : 'error'"
+                            :color="result.release_year == music.release_year ? 'success' : 'error'"
                         >
-                            {{ result['first-release-date'].substring(0, 4) }}
+                            {{ result.release_year }}
                         </UBadge>
                     </div>
                     <div class="w-20">
@@ -187,9 +182,9 @@ export default {
             // Construire les métadonnées à partir du résultat sélectionné
             const metadata = {
                 title: result.title,
-                artist: result['artist-credit'] ? result['artist-credit'].map(a => a.name).join(', ') : '',
-                album: result.releases && result.releases.length ? result.releases[0].title : '',
-                year: result['first-release-date'] ? result['first-release-date'].substring(0, 4) : ''
+                artist: result.artist,
+                album: result.album,
+                year: result.release_year || this.music.release_year
                 // Ajouter d'autres métadonnées si nécessaire
             }
 

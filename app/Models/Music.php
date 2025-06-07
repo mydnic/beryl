@@ -28,7 +28,7 @@ class Music extends Model
         $this->title = $audio->tags['song'] ?? null;
         $this->artist = $audio->tags['artist'] ?? null;
         $this->album = $audio->tags['album'] ?? null;
-        $this->release_year = $audio->tags['year'] ?? null;
+        $this->release_year = !empty($audio->tags['year']) ? $audio->tags['year'] : null;
         $this->genre = $audio->tags['genre'] ?? null;
         $this->metadata = array_merge($this->metadata ?? [], [
             'all_tags' => $audio->tags
