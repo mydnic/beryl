@@ -1,0 +1,70 @@
+version: '3'
+services:
+  app:
+    build:
+      args:
+        user: beryl
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: beryl-app
+    container_name: beryl-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+      - ${MUSIC_PATH}:${MUSIC_PATH}
+    networks:
+      - beryl
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: beryl-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - beryl
+
+  nginx:
+    image: nginx:alpine
+    container_name: beryl-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d/
+    networks:
+      - beryl
+    depends_on:
+      - app
+
+  queue:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: beryl-queue
+    restart: unless-stopped
+    command: php artisan queue:work
+    volumes:
+      - ./:/var/www
+      - ${MUSIC_PATH}:${MUSIC_PATH}
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
+networks:
+  beryl:
+    driver: bridge
+
+volumes:
+  postgres_data:
