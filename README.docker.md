@@ -8,6 +8,14 @@ Ce document explique comment déployer l'application Beryl en utilisant Docker.
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - Git
 
+## Technologies utilisées
+
+L'environnement Docker inclut :
+- PHP 8.2
+- PostgreSQL
+- Node.js 22
+- Yarn v4
+
 ## Installation
 
 ### 1. Cloner le dépôt
