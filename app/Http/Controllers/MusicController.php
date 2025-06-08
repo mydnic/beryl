@@ -14,13 +14,16 @@ class MusicController extends Controller
 {
     public function index()
     {
-        $musics = Music::query()->orderBy('id', 'desc')->get();
-        return inertia('Music/Index', compact('musics'));
+        $musics = Music::query()->orderBy('id', 'desc')->paginate(100);
+
+        return inertia('Music/Index', [
+            'musics' => $musics
+        ]);
     }
 
     public function scan()
     {
-        if (request()->boolean('truncate', true)) {
+        if (request()->boolean('truncate')) {
              Music::truncate();
         }
 

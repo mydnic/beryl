@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\MusicCreatedEvent;
 use App\Models\Music;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -12,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
 
-class ProcessMusicFileJob implements ShouldQueue, ShouldBroadcast
+class ProcessMusicFileJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -30,16 +31,7 @@ class ProcessMusicFileJob implements ShouldQueue, ShouldBroadcast
             $music = new Music();
             $music->filepath = $this->filePath;
             $music->save();
+            event(new MusicCreatedEvent($music));
         }
-    }
-
-    public function broadcastOn(): Channel
-    {
-        return new Channel('music-added');
-    }
-
-    public function broadcastAs(): string
-    {
-        return 'ProcessMusicFileJob';
     }
 }

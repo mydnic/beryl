@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\MusicResultFetchedEvent;
 use App\Models\Music;
 use App\Services\DeezerService;
 use App\Services\MusicBrainzService;
@@ -16,22 +17,12 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
-class SearchMusicMetadataJob implements ShouldQueue, ShouldBroadcast
+class SearchMusicMetadataJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(public Music $music)
     {
-    }
-
-    public function broadcastOn(): Channel
-    {
-        return new Channel('music-metadata');
-    }
-
-    public function broadcastAs(): string
-    {
-        return 'SearchMusicMetadataJob';
     }
 
     public function handle(MusicBrainzService $musicBrainzService, DeezerService $deezerService): void
@@ -76,6 +67,8 @@ class SearchMusicMetadataJob implements ShouldQueue, ShouldBroadcast
         $this->processAndStoreResults($service, $searchResults);
 
         $this->music->save();
+
+        event(new MusicResultFetchedEvent($this->music));
 
         // MusicBrainz requires throttling
         if ($service === 'musicbrainz') {

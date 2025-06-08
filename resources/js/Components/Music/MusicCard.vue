@@ -73,12 +73,12 @@
             </div>
         </div>
         <div
-            v-if="music.results"
+            v-if="results"
             class="mt-2 max-h-46 overflow-y-auto"
         >
             <div class="space-y-1 px-2 divide-slate-100 divide-y">
                 <div
-                    v-for="(result, index) in music.results"
+                    v-for="(result, index) in results"
                     :key="result.id"
                     class="flex gap-2 font-semibold mb-2 pb-2 text-xs"
                 >
@@ -141,6 +141,8 @@
 </template>
 
 <script>
+import { useEchoPublic } from '@laravel/echo-vue'
+
 export default {
     name: 'MusicCard',
 
@@ -154,8 +156,7 @@ export default {
     data () {
         return {
             loading: false,
-            showAllResults: true,
-            selectedResult: null
+            results: []
         }
     },
 
@@ -171,6 +172,20 @@ export default {
                 return this.music.musicbrainz_data.results.slice(0, 3)
             }
         }
+    },
+
+    created () {
+        this.results = this.music.results
+
+        useEchoPublic(
+            `music`,
+            'MusicResultFetchedEvent',
+            (e) => {
+                if (e.music.id === this.music.id) {
+                    this.results = e.music.results
+                }
+            }
+        )
     },
 
     methods: {
