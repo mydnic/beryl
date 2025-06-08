@@ -6,7 +6,9 @@ use App\Models\Music;
 use App\Services\DeezerService;
 use App\Services\MusicBrainzService;
 use Exception;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -14,7 +16,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
-class SearchMusicMetadataJob implements ShouldQueue
+class SearchMusicMetadataJob implements ShouldQueue, ShouldBroadcast
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -22,11 +24,21 @@ class SearchMusicMetadataJob implements ShouldQueue
     {
     }
 
+    public function broadcastOn(): Channel
+    {
+        return new Channel('music-metadata');
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'SearchMusicMetadataJob';
+    }
+
     public function handle(MusicBrainzService $musicBrainzService, DeezerService $deezerService): void
     {
         // Determine which service to use based on configuration
         $service = Config::get('music.metadata_service', 'musicbrainz');
-        
+
         // Prepare search parameters based on existing metadata
         $searchParams = $this->prepareSearchParams($service);
 
@@ -43,14 +55,14 @@ class SearchMusicMetadataJob implements ShouldQueue
                 'music_id' => $this->music->id,
                 'search_params' => $searchParams
             ]);
-            
+
             // Mark as no result for the specific service
             if ($service === 'musicbrainz') {
                 $this->music->musicbrainz_no_result = true;
             } else {
                 $this->music->deezer_no_result = true;
             }
-            
+
             $this->music->save();
             return;
         }
@@ -74,7 +86,7 @@ class SearchMusicMetadataJob implements ShouldQueue
 
     /**
      * Perform search using the configured service
-     * 
+     *
      * @param string $service
      * @param array $params
      * @param MusicBrainzService $musicBrainzService
@@ -82,9 +94,9 @@ class SearchMusicMetadataJob implements ShouldQueue
      * @return array|null
      */
     protected function performSearch(
-        string $service, 
-        array $params, 
-        MusicBrainzService $musicBrainzService, 
+        string $service,
+        array $params,
+        MusicBrainzService $musicBrainzService,
         DeezerService $deezerService
     ): ?array {
         if ($service === 'musicbrainz') {
@@ -98,7 +110,7 @@ class SearchMusicMetadataJob implements ShouldQueue
 
     /**
      * Process and store standardized results from the API
-     * 
+     *
      * @param string $service
      * @param array $searchResults
      * @return void
@@ -106,19 +118,19 @@ class SearchMusicMetadataJob implements ShouldQueue
     protected function processAndStoreResults(string $service, array $searchResults): void
     {
         $results = $this->music->results ?? [];
-        
+
         if ($service === 'musicbrainz') {
             $this->processMusicBrainzResults($searchResults['recordings'], $results);
         } else {
             $this->processDeezerResults($searchResults['data'], $results);
         }
-        
+
         $this->music->results = $results;
     }
 
     /**
      * Process MusicBrainz results into standardized format
-     * 
+     *
      * @param array $recordings
      * @param array &$results
      * @return void
@@ -126,18 +138,18 @@ class SearchMusicMetadataJob implements ShouldQueue
     protected function processMusicBrainzResults(array $recordings, array &$results): void
     {
         foreach ($recordings as $recording) {
-            $artist = !empty($recording['artist-credit'][0]['name']) 
-                ? $recording['artist-credit'][0]['name'] 
+            $artist = !empty($recording['artist-credit'][0]['name'])
+                ? $recording['artist-credit'][0]['name']
                 : null;
-                
-            $album = !empty($recording['releases'][0]['title']) 
-                ? $recording['releases'][0]['title'] 
+
+            $album = !empty($recording['releases'][0]['title'])
+                ? $recording['releases'][0]['title']
                 : null;
-                
-            $releaseYear = !empty($recording['first-release-date']) 
-                ? substr($recording['first-release-date'], 0, 4) 
+
+            $releaseYear = !empty($recording['first-release-date'])
+                ? substr($recording['first-release-date'], 0, 4)
                 : null;
-                
+
             $results[] = [
                 'title' => $recording['title'] ?? null,
                 'artist' => $artist,
@@ -151,7 +163,7 @@ class SearchMusicMetadataJob implements ShouldQueue
 
     /**
      * Process Deezer results into standardized format
-     * 
+     *
      * @param array $tracks
      * @param array &$results
      * @return void
@@ -159,30 +171,30 @@ class SearchMusicMetadataJob implements ShouldQueue
     protected function processDeezerResults(array $tracks, array &$results): void
     {
         $deezerService = app(DeezerService::class);
-        
+
         foreach ($tracks as $track) {
             $releaseYear = null;
             $trackDetails = $track;
-            
+
             // Si la date de sortie n'est pas disponible dans les résultats de recherche
             // et que nous avons un ID de piste, récupérer les détails complets
-            if ((!isset($track['album']['release_date']) || empty($track['album']['release_date'])) 
+            if ((!isset($track['album']['release_date']) || empty($track['album']['release_date']))
                 && isset($track['id'])) {
                 $trackDetails = $deezerService->getTrack($track['id']);
-                
+
                 // Attendre un peu pour respecter les limites de l'API
                 usleep(250000); // 250ms
-                
+
                 if (!$trackDetails) {
                     $trackDetails = $track; // Revenir aux détails originaux si l'appel API échoue
                 }
             }
-            
+
             // Essayer d'obtenir l'année de sortie à partir des détails de la piste
             if (isset($trackDetails['album']['release_date']) && !empty($trackDetails['album']['release_date'])) {
                 $releaseYear = substr($trackDetails['album']['release_date'], 0, 4);
             }
-            
+
             $results[] = [
                 'title' => $trackDetails['title'] ?? null,
                 'artist' => $trackDetails['artist']['name'] ?? null,

@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\PrivateChannel;
+
 class ProcessMusicFileJob implements ShouldQueue, ShouldBroadcast
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -35,5 +36,10 @@ class ProcessMusicFileJob implements ShouldQueue, ShouldBroadcast
     public function broadcastOn(): Channel
     {
         return new Channel('music-added');
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'ProcessMusicFileJob';
     }
 }

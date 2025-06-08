@@ -33,7 +33,7 @@ useEchoPublic(
     `music-added`,
     'ProcessMusicFileJob',
     (e) => {
-        console.log('e.order')
+        console.log('Événement reçu:', e)
     }
 )
 </script>

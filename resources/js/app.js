@@ -7,11 +7,13 @@ import Layout from './Layouts/Layout.vue'
 configureEcho({
     broadcaster: 'reverb'
     // key: import.meta.env.VITE_REVERB_APP_KEY,
-    // wsHost: import.meta.env.VITE_REVERB_HOST,
-    // wsPort: import.meta.env.VITE_REVERB_PORT,
-    // wssPort: import.meta.env.VITE_REVERB_PORT,
+    // wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
+    // wsPort: import.meta.env.VITE_REVERB_PORT || 8080,
+    // wssPort: import.meta.env.VITE_REVERB_PORT || 8080,
     // forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     // enabledTransports: ['ws', 'wss'],
+    // disableStats: true,
+    // debug: true
 })
 
 createInertiaApp({
