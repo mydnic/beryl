@@ -10,10 +10,6 @@ done
 echo "Running database migrations..."
 php artisan migrate --force
 
-# Build frontend assets
-echo "Building frontend assets..."
-yarn build
-
 # Clear caches
 echo "Clearing application caches..."
 php artisan optimize:clear

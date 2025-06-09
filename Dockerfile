@@ -25,13 +25,6 @@ RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Node.js 22.x and Yarn v4
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g corepack \
-    && corepack prepare yarn@4.1.0 --activate \
-    && corepack enable
-
 # Create system user to run Composer and Artisan Commands
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
 RUN mkdir -p /home/$user/.composer && \
@@ -53,7 +46,6 @@ USER $user
 
 # Install dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
-RUN yarn install
 
 # Generate application key
 RUN php artisan key:generate
