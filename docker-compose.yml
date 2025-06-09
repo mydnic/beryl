@@ -13,7 +13,7 @@ services:
     working_dir: /var/www/
     volumes:
       - ./:/var/www
-      - ${MUSIC_PATH}:${MUSIC_PATH}
+      - /path/to/music:/music
     networks:
       - beryl
     depends_on:

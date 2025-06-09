@@ -4,7 +4,7 @@
 if [ ! -f .env ]; then
     echo "Création du fichier .env à partir de .env.docker..."
     cp .env.docker .env
-    
+
     # Générer une clé d'application
     echo "Génération d'une clé d'application..."
     docker-compose run --rm app php artisan key:generate
