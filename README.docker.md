@@ -27,15 +27,33 @@ cd beryl
 
 ### 2. Configuration
 
-Exécutez le script de configuration pour créer le fichier `.env` et configurer le chemin vers votre bibliothèque musicale :
+Exécutez le script de configuration pour créer le fichier `.env` :
 
 ```bash
 ./docker/setup.sh
 ```
 
-Le script vous demandera le chemin absolu vers votre dossier de musique. Ce dossier sera monté dans les conteneurs Docker pour permettre à l'application d'accéder à vos fichiers musicaux.
+### 3. Configurer le chemin vers votre bibliothèque musicale
 
-### 3. Démarrer l'application
+Avant de démarrer l'application, vous devez modifier le fichier `docker-compose.yml` pour spécifier le chemin vers votre bibliothèque musicale.
+
+Ouvrez le fichier `docker-compose.yml` et modifiez les lignes suivantes dans les services `app` et `queue` :
+
+```yaml
+volumes:
+  - ./:/var/www
+  - /path/to/music:/music  # Remplacez /path/to/music par le chemin absolu vers votre bibliothèque musicale
+```
+
+Par exemple, si votre bibliothèque musicale se trouve dans `/home/user/Music`, vous devriez modifier ces lignes comme suit :
+
+```yaml
+volumes:
+  - ./:/var/www
+  - /home/user/Music:/music
+```
+
+### 4. Démarrer l'application
 
 ```bash
 docker-compose up -d
