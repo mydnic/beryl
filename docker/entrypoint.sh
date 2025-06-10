@@ -2,9 +2,11 @@
 
 # Wait for database to be ready
 echo "Waiting for database connection..."
-while ! php artisan db:monitor --max-attempts=1 > /dev/null 2>&1; do
-    sleep 1
+until pg_isready -h db -p 5432 -U ${DB_USERNAME} > /dev/null 2>&1; do
+    echo "Database is unavailable - waiting..."
+    sleep 2
 done
+echo "Database is up - continuing..."
 
 # Run database migrations
 echo "Running database migrations..."

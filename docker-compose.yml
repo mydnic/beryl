@@ -7,6 +7,13 @@ services:
     container_name: beryl-app
     restart: unless-stopped
     working_dir: /var/www/
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./:/var/www
       - /path/to/music:/music
@@ -49,6 +56,13 @@ services:
     container_name: beryl-queue
     restart: unless-stopped
     command: php artisan queue:work
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./:/var/www
       - /path/to/music:/music
