@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     postgresql-client \
     nodejs \
-    npm
+    npm \
+    cron
 
 # Install Node.js 22.x and Yarn v4
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
@@ -42,9 +43,10 @@ RUN mkdir -p /home/$user/.composer && \
 # Set working directory
 WORKDIR /var/www
 
-# Copy entrypoint script
+# Copy entrypoint scripts
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
-RUN chmod +x /usr/local/bin/entrypoint
+COPY docker/scheduler-entrypoint.sh /usr/local/bin/scheduler-entrypoint
+RUN chmod +x /usr/local/bin/entrypoint /usr/local/bin/scheduler-entrypoint
 
 # Expose port 9000 for PHP-FPM
 EXPOSE 9000

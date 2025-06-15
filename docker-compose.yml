@@ -72,6 +72,29 @@ services:
     networks:
       - beryl
 
+  scheduler:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: beryl-scheduler
+    restart: unless-stopped
+    command: /usr/local/bin/scheduler-entrypoint
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./:/var/www
+      - /path/to/music:/music
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
 networks:
   beryl:
     driver: bridge
