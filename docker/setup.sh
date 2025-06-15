@@ -1,16 +1,46 @@
 #!/bin/bash
 
-# Vérifier si le fichier .env existe
+# Check if .env file exists
 if [ ! -f .env ]; then
-    echo "Création du fichier .env à partir de .env.docker..."
+    echo "Creating .env file from .env.docker..."
     cp .env.docker .env
+    
+    # Generate application key
+    echo "Generating application key..."
+    APP_KEY=$(openssl rand -base64 32)
+    sed -i "s|APP_KEY=|APP_KEY=base64:$APP_KEY|g" .env
 fi
 
-# Demander le chemin vers les fichiers musicaux
-read -p "Entrez le chemin absolu vers votre dossier de musique: " music_path
+# Ask for the path to music files
+read -p "Enter the absolute path to your music folder: " music_path
 
-# Mettre à jour le fichier .env avec le chemin de musique
+# Update docker-compose.yml with the music path
+echo "Updating docker-compose.yml with music path..."
 sed -i "s|/path/to/music|$music_path|g" docker-compose.yml
 
-echo "Configuration terminée. Vous pouvez maintenant lancer l'application avec:"
+# Create vendor directory if it doesn't exist
+if [ ! -d vendor ]; then
+    echo "Creating vendor directory..."
+    mkdir -p vendor
+    chmod -R 777 vendor
+fi
+
+# Create storage directory structure with proper permissions
+echo "Setting up storage directory with proper permissions..."
+mkdir -p storage/app/public
+mkdir -p storage/framework/cache
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+mkdir -p storage/logs
+chmod -R 777 storage
+
+# Create bootstrap/cache directory with proper permissions
+echo "Setting up bootstrap/cache directory with proper permissions..."
+mkdir -p bootstrap/cache
+chmod -R 777 bootstrap/cache
+
+echo "Setup complete! You can now start the application with:"
 echo "docker-compose up -d"
+echo ""
+echo "The application will be available at: http://localhost:8000"
+echo "First startup may take a few minutes while dependencies are installed."

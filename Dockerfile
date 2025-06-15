@@ -15,7 +15,15 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    postgresql-client
+    postgresql-client \
+    nodejs \
+    npm
+
+# Install Node.js 22.x and Yarn v4
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g corepack \
+    && corepack prepare yarn@4.1.0 --activate
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -34,22 +42,9 @@ RUN mkdir -p /home/$user/.composer && \
 # Set working directory
 WORKDIR /var/www
 
-# Copy application files
-COPY . /var/www/
-
 # Copy entrypoint script
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
-
-# Set permissions
-RUN chown -R $user:$user /var/www
-USER $user
-
-# Install dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
-
-# Generate application key
-RUN php artisan key:generate
 
 # Expose port 9000 for PHP-FPM
 EXPOSE 9000
