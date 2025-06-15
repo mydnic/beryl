@@ -17,7 +17,10 @@
             />
         </div>
 
-        <div class="flex py-10 justify-center">
+        <div
+            v-if="allMusics.length"
+            class="flex py-10 justify-center"
+        >
             <UPagination
                 :items-per-page="pagination.per_page"
                 :total="pagination.total"
