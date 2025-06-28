@@ -23,7 +23,7 @@ class MusicController extends Controller
 
     public function scan()
     {
-        if (request()->boolean('truncate', true)) {
+        if (request()->boolean('truncate')) {
              Music::truncate();
         }
 
