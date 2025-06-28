@@ -26,6 +26,18 @@ sed -i "s|/path/to/music|$music_path|g" docker-compose.yml
 echo "Updating APP_URL in .env file..."
 sed -i "s|APP_URL=.*|APP_URL=$app_url|g" .env
 
+# Configure Reverb settings in .env
+echo "Configuring Laravel Reverb..."
+if ! grep -q "REVERB_SERVER_HOST" .env; then
+    echo "REVERB_SERVER_HOST=0.0.0.0" >> .env
+fi
+if ! grep -q "REVERB_SERVER_PORT" .env; then
+    echo "REVERB_SERVER_PORT=8080" >> .env
+fi
+if ! grep -q "REVERB_APP_HOST" .env; then
+    echo "REVERB_APP_HOST=reverb" >> .env
+fi
+
 # Create vendor directory if it doesn't exist
 if [ ! -d vendor ]; then
     echo "Creating vendor directory..."
@@ -55,10 +67,12 @@ echo "Setup complete! You can now start the application with:"
 echo "docker-compose up -d"
 echo ""
 echo "The application will be available at: $app_url"
+echo "Laravel Reverb will be available at: http://localhost:8080"
 echo "First startup may take a few minutes while dependencies are installed."
 echo ""
 echo "The following services will be running:"
 echo "- Web application (Laravel)"
 echo "- Database (PostgreSQL)"
 echo "- Queue worker for background jobs"
+echo "- Laravel Reverb for WebSockets"
 echo "- Scheduler for cron jobs"

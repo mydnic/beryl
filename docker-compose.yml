@@ -71,6 +71,33 @@ services:
     networks:
       - beryl
 
+  reverb:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: beryl-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REVERB_SERVER_HOST=0.0.0.0
+      - REVERB_SERVER_PORT=8080
+    volumes:
+      - ./:/var/www
+      - /path/to/music:/music
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
   scheduler:
     build:
       context: ./
