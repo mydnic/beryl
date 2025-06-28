@@ -14,9 +14,17 @@ fi
 # Ask for the path to music files
 read -p "Enter the absolute path to your music folder: " music_path
 
+# Ask for the application URL
+read -p "Enter the application URL (default: http://localhost:8000): " app_url
+app_url=${app_url:-http://localhost:8000}
+
 # Update docker-compose.yml with the music path
 echo "Updating docker-compose.yml with music path..."
 sed -i "s|/path/to/music|$music_path|g" docker-compose.yml
+
+# Update APP_URL in .env file
+echo "Updating APP_URL in .env file..."
+sed -i "s|APP_URL=.*|APP_URL=$app_url|g" .env
 
 # Create vendor directory if it doesn't exist
 if [ ! -d vendor ]; then
@@ -39,10 +47,14 @@ echo "Setting up bootstrap/cache directory with proper permissions..."
 mkdir -p bootstrap/cache
 chmod -R 777 bootstrap/cache
 
+# Generate Laravel application key
+echo "Generating Laravel application key..."
+docker-compose run --rm app php artisan key:generate
+
 echo "Setup complete! You can now start the application with:"
 echo "docker-compose up -d"
 echo ""
-echo "The application will be available at: http://localhost:8000"
+echo "The application will be available at: $app_url"
 echo "First startup may take a few minutes while dependencies are installed."
 echo ""
 echo "The following services will be running:"
