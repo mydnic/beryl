@@ -23,17 +23,15 @@ class MusicController extends Controller
 
     public function scan()
     {
-        if (request()->boolean('truncate')) {
+        if (request()->boolean('truncate', true)) {
              Music::truncate();
         }
 
-        $files = (new MusicScanner())->scan();
+        // Initialize the scanner which will queue directory scanning jobs
+        $message = (new MusicScanner())->scan();
 
-        foreach ($files as $file) {
-            dispatch(new ProcessMusicFileJob($file));
-        }
-
-        return back();
+        // Return with a success message
+        return back()->with('success', $message);
     }
 
     public function searchMetadata(Music $music)
