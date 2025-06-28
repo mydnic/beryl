@@ -1,0 +1,130 @@
+version: '3'
+
+services:
+  app:
+    image: mydnic/beryl:latest
+    container_name: beryl-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+    volumes:
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
+    networks:
+      - beryl
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: beryl-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-beryl}
+      POSTGRES_USER: ${DB_USERNAME:-beryl}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - beryl
+
+  nginx:
+    image: mydnic/beryl-nginx:latest
+    container_name: beryl-nginx
+    restart: unless-stopped
+    ports:
+      - ${HTTP_PORT:-8000}:80
+    volumes:
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
+    networks:
+      - beryl
+    depends_on:
+      - app
+
+  queue:
+    image: mydnic/beryl:latest
+    container_name: beryl-queue
+    restart: unless-stopped
+    command: php artisan queue:work
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+    volumes:
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
+  reverb:
+    image: mydnic/beryl:latest
+    container_name: beryl-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REVERB_SERVER_HOST=0.0.0.0
+      - REVERB_SERVER_PORT=8080
+    volumes:
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
+  scheduler:
+    image: mydnic/beryl:latest
+    container_name: beryl-scheduler
+    restart: unless-stopped
+    command: /usr/local/bin/scheduler-entrypoint
+    environment:
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+    volumes:
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
+    depends_on:
+      - app
+      - db
+    networks:
+      - beryl
+
+networks:
+  beryl:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  beryl_storage:
+  beryl_bootstrap:
