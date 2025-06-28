@@ -24,35 +24,48 @@ This is the easiest way to get Beryl up and running. No need to clone the reposi
 
 #### Installation Steps
 
-1. Download the installation files:
+1. Download the Docker Compose file:
 
 ```bash
 # Create a directory for Beryl
 mkdir beryl && cd beryl
 
-# Download the necessary files
+# Download the Docker Compose file
 curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker-compose.production.yml
-curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker/install.sh
-curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker/update-docker.sh
-chmod +x docker/install.sh docker/update-docker.sh
+# Rename it to the standard name
+mv docker-compose.production.yml docker-compose.yml
 ```
 
-2. Run the installation script:
+2. Edit the docker-compose.yml file to configure your installation:
 
 ```bash
-./docker/install.sh
+# Edit the file with your favorite text editor
+nano docker-compose.yml
 ```
 
-3. Follow the prompts to configure your installation.
+3. Update the following settings in the file:
+   - Replace `${MUSIC_PATH:-/path/to/music}` with the path to your music folder
+   - Adjust database credentials if needed
+   - Change ports if needed (default: 8000 for web, 8080 for Reverb)
 
-4. Once installation is complete, access Beryl at http://localhost:8000
+4. Start the application:
+
+```bash
+docker-compose up -d
+```
+
+5. Access Beryl at http://localhost:8000
 
 #### Updating Beryl
 
 To update to the latest version of Beryl:
 
 ```bash
-./docker/update-docker.sh
+# Pull the latest images
+docker-compose pull
+
+# Restart the containers with the new images
+docker-compose up -d
 ```
 
 This will pull the latest Docker images and restart your containers without affecting your music library or settings.
@@ -103,7 +116,7 @@ To update your development installation:
 
 ### Music Library
 
-Beryl needs access to your music files. During installation, you'll be asked for the path to your music folder. This folder should contain your music files organized in any structure you prefer.
+Beryl needs access to your music files. During installation, you'll need to configure the path to your music folder in the docker-compose.yml file. This folder should contain your music files organized in any structure you prefer.
 
 Supported audio formats:
 - MP3
@@ -118,15 +131,14 @@ Supported audio formats:
 
 ### Environment Variables
 
-The following environment variables can be customized in your `.env` file:
+The following environment variables can be customized in your docker-compose.yml file:
 
 - `DB_DATABASE`: Database name (default: beryl)
 - `DB_USERNAME`: Database username (default: beryl)
 - `DB_PASSWORD`: Database password
-- `APP_URL`: The URL where Beryl will be accessible (default: http://localhost:8000)
+- `MUSIC_PATH`: Path to your music folder
 - `HTTP_PORT`: The port for the web interface (default: 8000)
 - `REVERB_PORT`: The port for WebSocket connections (default: 8080)
-- `MUSIC_PATH`: Path to your music folder
 
 ## Usage
 
