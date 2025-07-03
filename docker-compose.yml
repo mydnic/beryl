@@ -1,8 +1,8 @@
+version: '3'
+
 services:
   app:
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: mydnic/beryl:latest
     container_name: beryl-app
     restart: unless-stopped
     working_dir: /var/www/
@@ -10,12 +10,13 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
     volumes:
-      - ./:/var/www
-      - /path/to/music:/music
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
     networks:
       - beryl
     depends_on:
@@ -26,32 +27,31 @@ services:
     container_name: beryl-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE:-beryl}
+      POSTGRES_USER: ${DB_USERNAME:-beryl}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - beryl
 
   nginx:
-    image: nginx:alpine
+    image: mydnic/beryl-nginx:latest
     container_name: beryl-nginx
     restart: unless-stopped
     ports:
-      - 8000:80
+      - ${HTTP_PORT:-8000}:80
     volumes:
-      - ./:/var/www
-      - ./docker/nginx:/etc/nginx/conf.d/
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
     networks:
       - beryl
     depends_on:
       - app
 
   queue:
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: mydnic/beryl:latest
     container_name: beryl-queue
     restart: unless-stopped
     command: php artisan queue:work
@@ -59,12 +59,13 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
     volumes:
-      - ./:/var/www
-      - /path/to/music:/music
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
     depends_on:
       - app
       - db
@@ -72,26 +73,25 @@ services:
       - beryl
 
   reverb:
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: mydnic/beryl:latest
     container_name: beryl-reverb
     restart: unless-stopped
     command: php artisan reverb:start --host=0.0.0.0
     ports:
-      - "8080:8080"
+      - "${REVERB_PORT:-8080}:8080"
     environment:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
       - REVERB_SERVER_HOST=0.0.0.0
       - REVERB_SERVER_PORT=8080
     volumes:
-      - ./:/var/www
-      - /path/to/music:/music
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
     depends_on:
       - app
       - db
@@ -99,9 +99,7 @@ services:
       - beryl
 
   scheduler:
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: mydnic/beryl:latest
     container_name: beryl-scheduler
     restart: unless-stopped
     command: /usr/local/bin/scheduler-entrypoint
@@ -109,12 +107,13 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE:-beryl}
+      - DB_USERNAME=${DB_USERNAME:-beryl}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
     volumes:
-      - ./:/var/www
-      - /path/to/music:/music
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+      - ${MUSIC_PATH:-/path/to/music}:/music
     depends_on:
       - app
       - db
@@ -127,3 +126,5 @@ networks:
 
 volumes:
   postgres_data:
+  beryl_storage:
+  beryl_bootstrap:

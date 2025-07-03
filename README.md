@@ -31,9 +31,7 @@ This is the easiest way to get Beryl up and running. No need to clone the reposi
 mkdir beryl && cd beryl
 
 # Download the Docker Compose file
-curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker-compose.production.yml
-# Rename it to the standard name
-mv docker-compose.production.yml docker-compose.yml
+curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker-compose.yml
 ```
 
 2. Edit the docker-compose.yml file to configure your installation:
@@ -45,8 +43,6 @@ nano docker-compose.yml
 
 3. Update the following settings in the file:
    - Replace `${MUSIC_PATH:-/path/to/music}` with the path to your music folder
-   - Adjust database credentials if needed
-   - Change ports if needed (default: 8000 for web, 8080 for Reverb)
 
 4. Start the application:
 

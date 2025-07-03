@@ -43,6 +43,18 @@ RUN mkdir -p /home/$user/.composer && \
 # Set working directory
 WORKDIR /var/www
 
+# Copy app code into the image
+COPY . .
+
+# Install PHP dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Install and build frontend assets
+RUN yarn install --immutable && yarn build
+
+# Set permissions for storage and cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
 # Copy entrypoint scripts
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 COPY docker/scheduler-entrypoint.sh /usr/local/bin/scheduler-entrypoint
