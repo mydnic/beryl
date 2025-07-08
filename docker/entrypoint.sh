@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Wait for database to be ready
-echo "Waiting for database connection..."
-until pg_isready -h db -p 5432 -U ${DB_USERNAME} > /dev/null 2>&1; do
-    echo "Database is unavailable - waiting..."
-    sleep 2
-done
-echo "Database is up - continuing..."
+# Ensure .env exists
+if [ ! -f /var/www/.env ]; then
+    echo ".env file not found. Copying from .env.example..."
+    cp /var/www/.env.example /var/www/.env
+fi
 
 # Check if vendor directory is empty
 if [ ! -d /var/www/vendor ] || [ -z "$(ls -A /var/www/vendor)" ]; then
@@ -41,6 +39,6 @@ echo "Setting proper permissions..."
 chown -R www-data:www-data /var/www/storage
 chown -R www-data:www-data /var/www/bootstrap/cache
 
-# Start PHP-FPM
-echo "Starting PHP-FPM..."
+# Start Supervisor (which starts nginx, php-fpm, queue)
+echo "Starting Supervisor..."
 exec "$@"

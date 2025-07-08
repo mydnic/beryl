@@ -60,11 +60,20 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 COPY docker/scheduler-entrypoint.sh /usr/local/bin/scheduler-entrypoint
 RUN chmod +x /usr/local/bin/entrypoint /usr/local/bin/scheduler-entrypoint
 
-# Expose port 9000 for PHP-FPM
-EXPOSE 9000
+# Install nginx and supervisor
+RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
+
+# Copy nginx config
+COPY docker/nginx/app.conf /etc/nginx/sites-available/default
+
+# Copy supervisor config
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expose HTTP port
+EXPOSE 80
 
 # Use the entrypoint script
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
-# Start PHP-FPM server
-CMD ["php-fpm"]
+# Start Supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

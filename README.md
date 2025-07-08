@@ -13,41 +13,52 @@ Beryl is a self-hosted music library manager built with Laravel. It allows you t
 
 ## Installation
 
-### Option 1: Docker Installation (Recommended)
+### Docker Installation (Single Container)
 
 This is the easiest way to get Beryl up and running. No need to clone the repository or manage source code.
 
 #### Prerequisites
-
-- Docker and Docker Compose installed on your system
+- Docker installed on your system
 - A folder containing your music files
 
 #### Installation Steps
 
-1. Download the Docker Compose file:
+1. Create a directory for Beryl (optional):
 
 ```bash
-# Create a directory for Beryl
 mkdir beryl && cd beryl
-
-# Download the Docker Compose file
-curl -O https://raw.githubusercontent.com/mydnic/beryl/main/docker-compose.yml
 ```
 
-2. Edit the docker-compose.yml file to configure your installation:
+2. Create a `docker-compose.yml` file with the following content:
 
-```bash
-# Edit the file with your favorite text editor
-nano docker-compose.yml
+```yaml
+version: '3.8'
+services:
+  beryl:
+    image: mydnic/beryl:latest
+    container_name: beryl
+    ports:
+      - "8000:80"
+    volumes:
+      - /path/to/your/music:/music   # Change this to your music folder
+      - beryl_storage:/var/www/storage
+      - beryl_bootstrap:/var/www/bootstrap/cache
+    environment:
+      - MUSIC_PATH=/music
+      - APP_ENV=production
+    restart: unless-stopped
+
+volumes:
+  beryl_storage:
+  beryl_bootstrap:
 ```
 
-3. Update the following settings in the file:
-   - Replace `${MUSIC_PATH:-/path/to/music}` with the path to your music folder
+3. Edit the `docker-compose.yml` file to set the correct path for your music folder.
 
 4. Start the application:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 5. Access Beryl at http://localhost:8000
@@ -57,56 +68,12 @@ docker-compose up -d
 To update to the latest version of Beryl:
 
 ```bash
-# Pull the latest images
-docker-compose pull
-
-# Restart the containers with the new images
-docker-compose up -d
+docker compose pull
 ```
 
-This will pull the latest Docker images and restart your containers without affecting your music library or settings.
+### Advanced: Using a Different Database
 
-### Option 2: Development Installation
-
-If you're a developer and want to contribute to Beryl or customize it, you can install it from source.
-
-#### Prerequisites
-
-- Git
-- Docker and Docker Compose
-
-#### Installation Steps
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/mydnic/beryl.git
-cd beryl
-```
-
-2. Run the setup script:
-
-```bash
-./docker/setup.sh
-```
-
-3. Follow the prompts to configure your installation.
-
-4. Start the Docker containers:
-
-```bash
-docker-compose up -d
-```
-
-5. Access Beryl at http://localhost:8000
-
-#### Updating a Development Installation
-
-To update your development installation:
-
-```bash
-./docker/update.sh
-```
+By default, Beryl uses SQLite for easy self-hosting. If you want to use PostgreSQL, set the relevant environment variables in your `.env` file and mount your own database.
 
 ## Configuration
 
