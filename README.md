@@ -13,9 +13,9 @@ Beryl is a self-hosted music library manager built with Laravel. It allows you t
 
 ## Installation
 
-### Docker Installation (Single Container)
+### Docker Installation (Self-Hosted)
 
-This is the easiest way to get Beryl up and running. No need to clone the repository or manage source code.
+This is the easiest way to get Beryl up and running in production. No need to clone the repository or manage source code.
 
 #### Prerequisites
 - Docker installed on your system
@@ -29,7 +29,7 @@ This is the easiest way to get Beryl up and running. No need to clone the reposi
 mkdir beryl && cd beryl
 ```
 
-2. Create a `docker-compose.yml` file with the following content:
+2. Create a `docker-compose.yml` file with the following minimal content:
 
 ```yaml
 version: '3.8'
@@ -41,16 +41,7 @@ services:
       - "8000:80"
     volumes:
       - /path/to/your/music:/music   # Change this to your music folder
-      - beryl_storage:/var/www/storage
-      - beryl_bootstrap:/var/www/bootstrap/cache
-    environment:
-      - MUSIC_PATH=/music
-      - APP_ENV=production
     restart: unless-stopped
-
-volumes:
-  beryl_storage:
-  beryl_bootstrap:
 ```
 
 3. Edit the `docker-compose.yml` file to set the correct path for your music folder.
@@ -63,17 +54,9 @@ docker compose up -d
 
 5. Access Beryl at http://localhost:8000
 
-#### Updating Beryl
-
-To update to the latest version of Beryl:
-
-```bash
-docker compose pull
-```
-
-### Advanced: Using a Different Database
-
-By default, Beryl uses SQLite for easy self-hosting. If you want to use PostgreSQL, set the relevant environment variables in your `.env` file and mount your own database.
+> **Note:**
+> - No extra configuration is needed for cache or bootstrap volumes. All persistent user data is in your music folder.
+> - Docker is only needed for self-hosted/production usage. For development, use the Laravel app directly.
 
 ## Configuration
 
@@ -96,12 +79,8 @@ Supported audio formats:
 
 The following environment variables can be customized in your docker-compose.yml file:
 
-- `DB_DATABASE`: Database name (default: beryl)
-- `DB_USERNAME`: Database username (default: beryl)
-- `DB_PASSWORD`: Database password
-- `MUSIC_PATH`: Path to your music folder
 - `HTTP_PORT`: The port for the web interface (default: 8000)
-- `REVERB_PORT`: The port for WebSocket connections (default: 8080)
+- `MUSIC_PATH`: Path to your music folder
 
 ## Usage
 
