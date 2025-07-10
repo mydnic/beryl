@@ -6,6 +6,25 @@ if [ ! -f /var/www/.env ]; then
     cp /var/www/.env.example /var/www/.env
 fi
 
+# Initialize and start PostgreSQL cluster if needed
+if [ ! -s "/var/lib/postgresql/15/main/PG_VERSION" ]; then
+    echo "Initializing PostgreSQL database cluster..."
+    pg_createcluster 15 main --start
+    # Set password for 'beryl' user and create DB
+    sudo -u postgres psql -c "CREATE USER beryl WITH PASSWORD 'secret';" || true
+    sudo -u postgres createdb -O beryl beryl || true
+else
+    service postgresql start
+fi
+
+# Wait for PostgreSQL to be ready
+until pg_isready -h 127.0.0.1 -p 5432 -U beryl > /dev/null 2>&1; do
+    echo "Database is unavailable - waiting..."
+    sleep 2
+done
+
+echo "Database is up - continuing..."
+
 # Check if vendor directory is empty
 if [ ! -d /var/www/vendor ] || [ -z "$(ls -A /var/www/vendor)" ]; then
     echo "Installing Composer dependencies..."

@@ -63,6 +63,12 @@ RUN chmod +x /usr/local/bin/entrypoint /usr/local/bin/scheduler-entrypoint
 # Install nginx and supervisor
 RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
 
+# Install PostgreSQL server
+RUN apt-get update && apt-get install -y postgresql postgresql-contrib && rm -rf /var/lib/apt/lists/*
+
+# Create PostgreSQL data directory
+RUN mkdir -p /var/lib/postgresql/data && chown -R postgres:postgres /var/lib/postgresql
+
 # Copy nginx config
 COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 

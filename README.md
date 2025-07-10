@@ -13,9 +13,9 @@ Beryl is a self-hosted music library manager built with Laravel. It allows you t
 
 ## Installation
 
-### Docker Installation (Self-Hosted)
+### Docker Installation (Self-Hosted, All-in-One)
 
-This is the easiest way to get Beryl up and running in production. No need to clone the repository or manage source code.
+This is the easiest way to get Beryl up and running in production. No need to clone the repository or manage source code. Everything (Laravel, nginx, PostgreSQL) runs in a single container.
 
 #### Prerequisites
 - Docker installed on your system
@@ -41,10 +41,11 @@ services:
       - "8000:80"
     volumes:
       - /path/to/your/music:/music   # Change this to your music folder
+      - /path/to/your/dbdata:/var/lib/postgresql/data # Change for persistent DB data
     restart: unless-stopped
 ```
 
-3. Edit the `docker-compose.yml` file to set the correct path for your music folder.
+3. Edit the `docker-compose.yml` file to set the correct paths for your music and database data folders.
 
 4. Start the application:
 
@@ -55,7 +56,7 @@ docker compose up -d
 5. Access Beryl at http://localhost:8000
 
 > **Note:**
-> - No extra configuration is needed for cache or bootstrap volumes. All persistent user data is in your music folder.
+> - All persistent user data is in your music folder and the database data folder you mount.
 > - Docker is only needed for self-hosted/production usage. For development, use the Laravel app directly.
 
 ## Configuration
