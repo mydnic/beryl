@@ -141,7 +141,7 @@
 </template>
 
 <script>
-import { useEchoPublic } from '@laravel/echo-vue'
+// import { useEchoPublic } from '@laravel/echo-vue'
 
 export default {
     name: 'MusicCard',
@@ -177,15 +177,15 @@ export default {
     created () {
         this.results = this.music.results
 
-        useEchoPublic(
-            `music`,
-            'MusicResultFetchedEvent',
-            (e) => {
-                if (e.music.id === this.music.id) {
-                    this.results = e.music.results
-                }
-            }
-        )
+        // useEchoPublic(
+        //     `music`,
+        //     'MusicResultFetchedEvent',
+        //     (e) => {
+        //         if (e.music.id === this.music.id) {
+        //             this.results = e.music.results
+        //         }
+        //     }
+        // )
     },
 
     methods: {

@@ -14,7 +14,9 @@ export default {
         }
     },
 
-    data() {
+    emits: ['play'],
+
+    data () {
         return {
             isPlaying: false,
             audioPlayer: null
@@ -22,48 +24,48 @@ export default {
     },
 
     // Clean up when component is destroyed
-    beforeUnmount() {
-        this.stopMusic();
+    beforeUnmount () {
+        this.stopMusic()
     },
 
     methods: {
-        togglePlay() {
+        togglePlay () {
             if (this.isPlaying) {
-                this.stopMusic();
+                this.stopMusic()
             } else {
                 // Emit event to parent to stop any other playing music
-                this.$emit('play', this.music.id);
-                this.playMusic();
+                this.$emit('play', this.music.id)
+                this.playMusic()
             }
         },
 
-        playMusic() {
-            const streamUrl = `/music/${this.music.id}/stream`;
-            this.audioPlayer = new Audio(streamUrl);
-            
+        playMusic () {
+            const streamUrl = `/music/${this.music.id}/stream`
+            this.audioPlayer = new Audio(streamUrl)
+
             // Set up event listener for when audio ends
             this.audioPlayer.addEventListener('ended', () => {
-                this.isPlaying = false;
-            });
-            
+                this.isPlaying = false
+            })
+
             // Play the audio
-            this.audioPlayer.play();
-            this.isPlaying = true;
+            this.audioPlayer.play()
+            this.isPlaying = true
         },
-        
-        stopMusic() {
+
+        stopMusic () {
             if (this.audioPlayer) {
-                this.audioPlayer.pause();
-                this.audioPlayer.currentTime = 0;
-                this.audioPlayer = null;
+                this.audioPlayer.pause()
+                this.audioPlayer.currentTime = 0
+                this.audioPlayer = null
             }
-            this.isPlaying = false;
+            this.isPlaying = false
         },
 
         // Public method that can be called from parent
-        stop() {
+        stop () {
             if (this.isPlaying) {
-                this.stopMusic();
+                this.stopMusic()
             }
         }
     }

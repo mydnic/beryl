@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { useEchoPublic } from '@laravel/echo-vue'
+// import { useEchoPublic } from '@laravel/echo-vue'
 
 const props = defineProps({
     musics: {
@@ -49,11 +49,11 @@ const pagination = {
     current_page: props.musics.current_page
 }
 
-useEchoPublic(
-    `music-created`,
-    'MusicCreatedEvent',
-    (e) => {
-        allMusics.push(e.music)
-    }
-)
+// useEchoPublic(
+//     `music-created`,
+//     'MusicCreatedEvent',
+//     (e) => {
+//         allMusics.push(e.music)
+//     }
+// )
 </script>
