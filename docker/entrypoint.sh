@@ -6,30 +6,12 @@ if [ ! -f /var/www/.env ]; then
     cp /var/www/.env.example /var/www/.env
 fi
 
-# Initialize and start PostgreSQL cluster if needed
-if [ ! -s "/var/lib/postgresql/15/main/PG_VERSION" ]; then
-    echo "Initializing PostgreSQL database cluster..."
-    pg_createcluster 15 main --start
+# Ensure SQLite database file exists and is writable
+mkdir -p /var/www/database
+if [ ! -f /var/www/database/database.sqlite ]; then
+    touch /var/www/database/database.sqlite
 fi
-
-service postgresql start
-
-# Ensure beryl user exists
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='beryl'\" | grep -q 1 || psql -c \"CREATE USER beryl WITH PASSWORD 'secret';\""
-
-# Ensure beryl database exists and is owned by beryl
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='beryl'\" | grep -q 1 || createdb -O beryl beryl"
-
-# Always set password for beryl user (idempotent)
-su - postgres -c "psql -c \"ALTER USER beryl WITH PASSWORD 'secret';\""
-
-# Wait for PostgreSQL to be ready
-until pg_isready -h 127.0.0.1 -p 5432 -U beryl > /dev/null 2>&1; do
-    echo "Database is unavailable - waiting..."
-    sleep 2
-done
-
-echo "Database is up - continuing..."
+chown -R www-data:www-data /var/www/database
 
 # Ensure correct permissions for PHP-FPM
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public

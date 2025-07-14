@@ -15,7 +15,7 @@ Beryl is a self-hosted music library manager built with Laravel. It allows you t
 
 ### Docker Installation (Self-Hosted, All-in-One)
 
-This is the easiest way to get Beryl up and running in production. No need to clone the repository or manage source code. Everything (Laravel, nginx, PostgreSQL) runs in a single container.
+This is the easiest way to get Beryl up and running in production. No need to clone the repository or manage source code. Everything (Laravel, nginx) runs in a single container.
 
 #### Prerequisites
 - Docker installed on your system
@@ -36,16 +36,16 @@ version: '3.8'
 services:
   beryl:
     image: mydnic/beryl:latest
+    restart: unless-stopped
     container_name: beryl
     ports:
-      - "8000:80"
+      - "4387:80"
     volumes:
       - /path/to/your/music:/music   # Change this to your music folder
-      - /path/to/your/dbdata:/var/lib/postgresql/data # Change for persistent DB data
-    restart: unless-stopped
+      - /path/to/your/data:/var/www/database  # SQLite DB persistence
 ```
 
-3. Edit the `docker-compose.yml` file to set the correct paths for your music and database data folders.
+3. Edit the `docker-compose.yml` file to set the correct paths for your music folder.
 
 4. Start the application:
 
@@ -53,11 +53,11 @@ services:
 docker compose up -d
 ```
 
-5. Access Beryl at http://localhost:8000
+5. Access Beryl at http://localhost:4387
 
 > **Note:**
-> - All persistent user data is in your music folder and the database data folder you mount.
-> - Docker is only needed for self-hosted/production usage. For development, use the Laravel app directly.
+> - All persistent user data is in your music folder and the SQLite database file you mount.
+> - By default, the app will be available on port 4387. You can change this in the `docker-compose.yml` file.
 
 ## Configuration
 
@@ -80,8 +80,7 @@ Supported audio formats:
 
 The following environment variables can be customized in your docker-compose.yml file:
 
-- `HTTP_PORT`: The port for the web interface (default: 8000)
-- `MUSIC_PATH`: Path to your music folder
+- `BERYL_PORT`: The port for the web interface (default: 4387)
 
 ## Usage
 
