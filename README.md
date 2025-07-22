@@ -42,7 +42,7 @@ services:
       - "4387:80"
     volumes:
       - /path/to/your/music:/music   # Change this to your music folder
-      - /path/to/your/data:/var/www/database  # SQLite DB persistence
+      - /path/to/your/data:/var/database  # SQLite DB persistence
 ```
 
 3. Edit the `docker-compose.yml` file to set the correct paths for your music folder.

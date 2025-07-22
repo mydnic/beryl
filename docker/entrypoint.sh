@@ -8,10 +8,10 @@ fi
 
 # Ensure SQLite database file exists and is writable
 mkdir -p /var/www/database
-if [ ! -f /var/www/database/database.sqlite ]; then
-    touch /var/www/database/database.sqlite
+if [ ! -f /var/database/database.sqlite ]; then
+    touch /var/database/database.sqlite
 fi
-chown -R www-data:www-data /var/www/database
+chown -R www-data:www-data /var/www/database /var/database
 
 # Ensure correct permissions for PHP-FPM
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public
