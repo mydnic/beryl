@@ -144,6 +144,9 @@
             </div>
         </div>
 
+        <!-- Job Progress Tracker -->
+        <JobProgressTracker :initial-stats="job_stats" />
+
         <!-- Results Summary -->
         <div
             v-if="allMusics.length"
@@ -237,6 +240,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
+import JobProgressTracker from '@/Components/JobProgressTracker.vue'
 
 // Simple debounce function
 const debounce = (func, wait) => {
@@ -264,6 +268,10 @@ const props = defineProps({
             sort_order: 'desc',
             needs_fixing: false
         })
+    },
+    job_stats: {
+        type: Object,
+        required: true
     }
 })
 
