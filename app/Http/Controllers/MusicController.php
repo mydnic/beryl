@@ -9,15 +9,47 @@ use App\Models\Music;
 use Exception;
 use getID3_writetags;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class MusicController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $musics = Music::query()->orderBy('id', 'desc')->paginate(100);
+        $query = Music::query();
+
+        // Handle search
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                  ->orWhere('artist', 'LIKE', "%{$search}%")
+                  ->orWhere('album', 'LIKE', "%{$search}%")
+                  ->orWhere('filepath', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Handle sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        $allowedSorts = ['artist', 'created_at', 'release_year'];
+        $allowedOrders = ['asc', 'desc'];
+
+        if (in_array($sortBy, $allowedSorts) && in_array($sortOrder, $allowedOrders)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $musics = $query->paginate(100)->withQueryString();
 
         return inertia('Music/Index', [
-            'musics' => $musics
+            'musics' => $musics,
+            'filters' => [
+                'search' => $request->get('search', ''),
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ]
         ]);
     }
 
