@@ -1,0 +1,55 @@
+name: Test Docker Build
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+    # Don't run on tags (handled by docker-publish.yml)
+    tags-ignore:
+      - 'v*'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Docker build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test container startup
+        run: |
+          # Build the image locally for testing
+          docker build -t beryl-test .
+          
+          # Test that the container starts without errors
+          docker run --rm -d --name beryl-test-container \
+            -e APP_KEY=base64:$(openssl rand -base64 32) \
+            -e DB_CONNECTION=sqlite \
+            -e DB_DATABASE=/app/database/database.sqlite \
+            beryl-test
+          
+          # Wait a moment for startup
+          sleep 10
+          
+          # Check if container is still running
+          if docker ps | grep -q beryl-test-container; then
+            echo "✅ Container started successfully"
+            docker stop beryl-test-container
+          else
+            echo "❌ Container failed to start"
+            docker logs beryl-test-container
+            exit 1
+          fi
