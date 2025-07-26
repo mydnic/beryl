@@ -38,7 +38,7 @@
                     </div>
 
                     <!-- Sort Controls -->
-                    <div class="flex gap-3">
+                    <div class="flex gap-3 items-center">
                         <USelect
                             v-model="sortBy"
                             :items="sortOptions"
@@ -56,12 +56,30 @@
                         >
                             {{ sortOrder === 'asc' ? 'A-Z' : 'Z-A' }}
                         </UButton>
+
+                        <!-- Needs Fixing Toggle -->
+                        <div class="flex items-center gap-2">
+                            <USwitch
+                                v-model="needsFixing"
+                                @change="updateNeedsFixing"
+                            />
+                            <label
+                                class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex items-center"
+                                @click="needsFixing = !needsFixing"
+                            >
+                                <UIcon
+                                    name="i-lucide-wrench"
+                                    class="w-4 h-4 mr-1"
+                                />
+                                Needs fixing only
+                            </label>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Active Filters Display -->
                 <div
-                    v-if="searchQuery || sortBy !== 'created_at'"
+                    v-if="searchQuery || sortBy !== 'created_at' || needsFixing"
                     class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
                 >
                     <span class="text-sm text-gray-600 dark:text-gray-400">Active filters:</span>
@@ -103,6 +121,25 @@
                             @click="resetSort"
                         />
                     </UBadge>
+                    <UBadge
+                        v-if="needsFixing"
+                        color="orange"
+                        variant="soft"
+                        class="gap-1"
+                    >
+                        <UIcon
+                            name="i-lucide-wrench"
+                            class="w-3 h-3"
+                        />
+                        Needs fixing only
+                        <UButton
+                            icon="i-lucide-x"
+                            size="2xs"
+                            color="orange"
+                            variant="ghost"
+                            @click="clearNeedsFixing"
+                        />
+                    </UBadge>
                 </div>
             </div>
         </div>
@@ -116,6 +153,12 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                     Showing {{ allMusics.length }} of {{ pagination.total }} tracks
                     <span v-if="searchQuery">matching "{{ searchQuery }}"</span>
+                    <span
+                        v-if="needsFixing"
+                        class="text-orange-600 dark:text-orange-400 font-medium"
+                    >
+                        that need metadata fixing
+                    </span>
                 </p>
                 <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                     <UIcon
@@ -151,21 +194,18 @@
                     class="w-16 h-16 text-gray-400 mx-auto mb-4"
                 />
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {{ searchQuery ? 'No tracks found' : 'No music in your library' }}
+                    {{ getEmptyStateTitle() }}
                 </h3>
                 <p class="text-gray-600 dark:text-gray-400 mb-6">
-                    {{ searchQuery
-                        ? `No tracks match your search for "${searchQuery}". Try different keywords.`
-                        : 'Start by scanning your music directory to populate your library.'
-                    }}
+                    {{ getEmptyStateMessage() }}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                     <UButton
-                        v-if="searchQuery"
+                        v-if="searchQuery || needsFixing"
                         variant="outline"
-                        @click="clearSearch"
+                        @click="clearAllFilters"
                     >
-                        Clear Search
+                        Clear All Filters
                     </UButton>
                     <UButton
                         to="/scan"
@@ -173,7 +213,7 @@
                         icon="i-lucide-scan-line"
                         color="primary"
                     >
-                        {{ searchQuery ? 'Scan for More Music' : 'Scan Music Library' }}
+                        {{ searchQuery || needsFixing ? 'Scan for More Music' : 'Scan Music Library' }}
                     </UButton>
                 </div>
             </div>
@@ -221,7 +261,8 @@ const props = defineProps({
         default: () => ({
             search: '',
             sort_by: 'created_at',
-            sort_order: 'desc'
+            sort_order: 'desc',
+            needs_fixing: false
         })
     }
 })
@@ -230,6 +271,7 @@ const props = defineProps({
 const searchQuery = ref(props.filters.search)
 const sortBy = ref(props.filters.sort_by)
 const sortOrder = ref(props.filters.sort_order)
+const needsFixing = ref(props.filters.needs_fixing)
 
 // Computed properties
 const allMusics = computed(() => props.musics?.data || [])
@@ -265,6 +307,10 @@ const buildQueryParams = () => {
 
     if (sortOrder.value !== 'desc') {
         params.set('sort_order', sortOrder.value)
+    }
+
+    if (needsFixing.value) {
+        params.set('needs_fixing', 'true')
     }
 
     return params.toString()
@@ -305,6 +351,46 @@ const resetSort = () => {
     updateUrl()
 }
 
+const clearNeedsFixing = () => {
+    needsFixing.value = false
+    updateUrl()
+}
+
+const clearAllFilters = () => {
+    searchQuery.value = ''
+    sortBy.value = 'created_at'
+    sortOrder.value = 'desc'
+    needsFixing.value = false
+    updateUrl()
+}
+
+const getEmptyStateTitle = () => {
+    if (needsFixing.value) {
+        return 'No tracks need fixing'
+    }
+    if (searchQuery.value) {
+        return 'No tracks found'
+    }
+    return 'No music in your library'
+}
+
+const getEmptyStateMessage = () => {
+    if (needsFixing.value && searchQuery.value) {
+        return `No tracks match your search for "${searchQuery.value}" that need metadata fixing. Try different keywords or clear the filter.`
+    }
+    if (needsFixing.value) {
+        return 'All your tracks have correct metadata! You can scan for more music or clear the filter to see all tracks.'
+    }
+    if (searchQuery.value) {
+        return `No tracks match your search for "${searchQuery.value}". Try different keywords.`
+    }
+    return 'Start by scanning your music directory to populate your library.'
+}
+
+const updateNeedsFixing = () => {
+    updateUrl()
+}
+
 const handlePageChange = (page) => {
     const queryString = buildQueryParams()
     const baseUrl = queryString ? `/?${queryString}` : '/'
@@ -321,5 +407,6 @@ watch(() => props.filters, (newFilters) => {
     searchQuery.value = newFilters.search
     sortBy.value = newFilters.sort_by
     sortOrder.value = newFilters.sort_order
+    needsFixing.value = newFilters.needs_fixing
 }, { immediate: true })
 </script>

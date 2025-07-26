@@ -141,8 +141,6 @@
 </template>
 
 <script>
-// import { useEchoPublic } from '@laravel/echo-vue'
-
 export default {
     name: 'MusicCard',
 
@@ -157,20 +155,6 @@ export default {
         return {
             loading: false,
             results: []
-        }
-    },
-
-    computed: {
-        displayedResults () {
-            if (!this.music.musicbrainz_data || !this.music.musicbrainz_data.results) {
-                return []
-            }
-
-            if (this.showAllResults) {
-                return this.music.musicbrainz_data.results
-            } else {
-                return this.music.musicbrainz_data.results.slice(0, 3)
-            }
         }
     },
 
@@ -191,7 +175,15 @@ export default {
     methods: {
         deleteMusic (music) {
             return () => {
-                this.$inertia.delete(`/music/${music.id}`)
+                this.$inertia.delete(`/music/${music.id}`, {
+                    onFinish: () => {
+                        const toast = useToast()
+                        toast.add({
+                            title: 'Music deleted successfully!',
+                            description: `The music file has been deleted.`
+                        })
+                    }
+                })
             }
         },
 

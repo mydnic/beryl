@@ -28,6 +28,24 @@ class MusicController extends Controller
             });
         }
 
+        // Handle "needs fixing" filter
+        if ($request->boolean('needs_fixing')) {
+            $query->whereNotNull('api_results')
+                  ->where(function ($q) {
+                      $q->whereRaw("
+                          CASE 
+                              WHEN json_extract(api_results, '$.deezer.data[0]') IS NOT NULL THEN
+                                  (title != json_extract(api_results, '$.deezer.data[0].title') OR
+                                   artist != json_extract(api_results, '$.deezer.data[0].artist.name') OR
+                                   album != json_extract(api_results, '$.deezer.data[0].album.title') OR
+                                   (release_year IS NOT NULL AND json_extract(api_results, '$.deezer.data[0].album.release_date') IS NOT NULL AND
+                                    release_year != CAST(substr(json_extract(api_results, '$.deezer.data[0].album.release_date'), 1, 4) AS INTEGER)))
+                              ELSE 0
+                          END
+                      ");
+                  });
+        }
+
         // Handle sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
@@ -49,6 +67,7 @@ class MusicController extends Controller
                 'search' => $request->get('search', ''),
                 'sort_by' => $sortBy,
                 'sort_order' => $sortOrder,
+                'needs_fixing' => $request->boolean('needs_fixing'),
             ]
         ]);
     }
