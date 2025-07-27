@@ -27,7 +27,7 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     {
         // Get cleaned filename for search
         $cleanedFilename = $this->getCleanedFilename();
-        
+
         if (empty($cleanedFilename) || strlen($cleanedFilename) < 3) {
             Log::info("Filename too short or empty for search", [
                 'music_id' => $this->music->id,
@@ -52,13 +52,6 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
                 'search_params' => $searchParams,
                 'cleaned_filename' => $cleanedFilename
             ]);
-
-            // Mark as no result for the specific service (filename-based search)
-            if ($service === 'musicbrainz') {
-                $this->music->musicbrainz_filename_no_result = true;
-            } else {
-                $this->music->deezer_filename_no_result = true;
-            }
 
             $this->music->save();
             return;
@@ -147,13 +140,13 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     protected function processAndStoreResults(string $service, array $searchResults): void
     {
         $results = $this->music->results ?? [];
-        
+
         if ($service === 'musicbrainz') {
             $results['musicbrainz_filename'] = $this->processMusicBrainzResults($searchResults);
         } else {
             $results['deezer_filename'] = $this->processDeezerResults($searchResults);
         }
-        
+
         $this->music->results = $results;
     }
 
@@ -166,20 +159,20 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     protected function processMusicBrainzResults(array $searchResults): array
     {
         $processed = [];
-        
+
         foreach ($searchResults['recordings'] ?? [] as $recording) {
             $processed[] = [
                 'title' => $recording['title'] ?? null,
                 'artist' => $recording['artist-credit'][0]['name'] ?? null,
                 'album' => $recording['releases'][0]['title'] ?? null,
-                'release_year' => isset($recording['releases'][0]['date']) 
-                    ? (int) substr($recording['releases'][0]['date'], 0, 4) 
+                'release_year' => isset($recording['releases'][0]['date'])
+                    ? (int) substr($recording['releases'][0]['date'], 0, 4)
                     : null,
                 'score' => $recording['score'] ?? 0,
                 'source' => 'musicbrainz_filename'
             ];
         }
-        
+
         return $processed;
     }
 
@@ -192,20 +185,20 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     protected function processDeezerResults(array $searchResults): array
     {
         $processed = [];
-        
+
         foreach ($searchResults['data'] ?? [] as $track) {
             $processed[] = [
                 'title' => $track['title'] ?? null,
                 'artist' => $track['artist']['name'] ?? null,
                 'album' => $track['album']['title'] ?? null,
-                'release_year' => isset($track['album']['release_date']) 
-                    ? (int) substr($track['album']['release_date'], 0, 4) 
+                'release_year' => isset($track['album']['release_date'])
+                    ? (int) substr($track['album']['release_date'], 0, 4)
                     : null,
                 'score' => 100, // Deezer doesn't provide scores, use default
                 'source' => 'deezer_filename'
             ];
         }
-        
+
         return $processed;
     }
 
@@ -217,18 +210,18 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     protected function getCleanedFilename(): string
     {
         $filename = pathinfo($this->music->filepath, PATHINFO_FILENAME);
-        
+
         // Clean up the filename - remove common unwanted parts
         $unwantedPatterns = [
             '/\[.*?\]/',           // Remove [brackets content]
-            '/\(.*?\)/',           // Remove (parentheses content) 
+            '/\(.*?\)/',           // Remove (parentheses content)
             '/\{.*?\}/',           // Remove {braces content}
             '/_+/',                // Replace multiple underscores with single space
             '/\s+/',               // Replace multiple spaces with single space
             '/^\d+\.?\s*/',        // Remove leading track numbers
             '/\.(mp3|flac|wav|m4a|ogg)$/i', // Remove file extensions (just in case)
         ];
-        
+
         foreach ($unwantedPatterns as $pattern) {
             if ($pattern === '/_+/' || $pattern === '/\s+/') {
                 $filename = preg_replace($pattern, ' ', $filename);
@@ -236,7 +229,7 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
                 $filename = preg_replace($pattern, '', $filename);
             }
         }
-        
+
         return trim($filename);
     }
 }
