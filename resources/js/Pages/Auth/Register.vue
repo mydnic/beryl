@@ -1,4 +1,6 @@
 <template>
+    <Head title="Register - Beryl" />
+    
     <div>
         <UCard class="w-full">
             <template #header>
@@ -90,10 +92,14 @@
 </template>
 
 <script>
+import { Head } from '@inertiajs/vue3'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 
 export default {
     layout: GuestLayout,
+    components: {
+        Head
+    },
     data () {
         return {
             form: this.$inertia.form({

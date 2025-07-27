@@ -1,4 +1,6 @@
 <template>
+    <Head title="Login - Beryl" />
+    
     <div>
         <UCard class="w-full">
             <template #header>
@@ -74,9 +76,13 @@
 </template>
 
 <script>
+import { Head } from '@inertiajs/vue3'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 
 export default {
+    components: {
+        Head
+    },
     layout: GuestLayout,
     data () {
         return {

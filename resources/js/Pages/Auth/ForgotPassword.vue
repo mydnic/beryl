@@ -1,4 +1,5 @@
 <template>
+    <Head title="Forgot Password - Beryl" />
     <div>
         <Card>
             <template #title>
@@ -51,9 +52,13 @@
 </template>
 
 <script>
+import { Head } from '@inertiajs/vue3'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 
 export default {
+    components: {
+        Head
+    },
     layout: GuestLayout,
     data () {
         return {
