@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
+use App\Jobs\SearchMusicMetadataFromFilenameJob;
 use App\Jobs\SearchMusicMetadataJob;
 use App\Models\Music;
 use Exception;
@@ -33,20 +34,14 @@ class MusicController extends Controller
             $query->whereNotNull('api_results')
                   ->where(function ($q) {
                       $q->whereRaw("
-                          CASE 
-                              WHEN json_extract(api_results, '$.deezer.data') IS NOT NULL THEN
-                                  NOT EXISTS (
-                                      SELECT 1 FROM json_each(json_extract(api_results, '$.deezer.data')) 
-                                      WHERE (
-                                          title = json_extract(value, '$.title') AND
-                                          artist = json_extract(value, '$.artist.name') AND
-                                          album = json_extract(value, '$.album.title') AND
-                                          (release_year IS NULL OR 
-                                           json_extract(value, '$.album.release_date') IS NULL OR
-                                           release_year = CAST(substr(json_extract(value, '$.album.release_date'), 1, 4) AS INTEGER))
-                                      )
-                                  )
-                              ELSE 1
+                          CASE
+                              WHEN json_extract(api_results, '$.deezer.data[0]') IS NOT NULL THEN
+                                  (title != json_extract(api_results, '$.deezer.data[0].title') OR
+                                   artist != json_extract(api_results, '$.deezer.data[0].artist.name') OR
+                                   album != json_extract(api_results, '$.deezer.data[0].album.title') OR
+                                   (release_year IS NOT NULL AND json_extract(api_results, '$.deezer.data[0].album.release_date') IS NOT NULL AND
+                                    release_year != CAST(substr(json_extract(api_results, '$.deezer.data[0].album.release_date'), 1, 4) AS INTEGER)))
+                              ELSE 0
                           END
                       ");
                   });
@@ -68,7 +63,7 @@ class MusicController extends Controller
         $musics = $query->paginate(100)->withQueryString();
 
         // Get job statistics
-        $jobController = new \App\Http\Controllers\JobController();
+        $jobController = new JobController();
         $jobStats = $jobController->index();
 
         return inertia('Music/Index', [
@@ -98,7 +93,11 @@ class MusicController extends Controller
 
     public function searchMetadata(Music $music)
     {
-        dispatch(new SearchMusicMetadataJob($music));
+        if (request()->boolean('filename_only')) {
+            dispatch(new SearchMusicMetadataFromFilenameJob($music));
+        } else {
+            dispatch(new SearchMusicMetadataJob($music));
+        }
 
         return back();
     }

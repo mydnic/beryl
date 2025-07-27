@@ -56,6 +56,13 @@
                                 }
                             },
                             {
+                                label: 'Search Metadata (filename only)',
+                                icon: 'i-lucide-search',
+                                onSelect: () => {
+                                    $inertia.post(`/music/${music.id}/metadata` + '?filename_only=true')
+                                }
+                            },
+                            {
                                 label: 'Delete',
                                 icon: 'i-lucide-trash',
                                 color: 'error',
