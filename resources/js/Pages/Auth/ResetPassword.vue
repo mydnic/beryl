@@ -1,25 +1,25 @@
 <template>
     <Head title="Reset Password - Beryl" />
-    
+
     <div>
-        <Card>
+        <UCard>
             <template #title>
                 Réinitialiser votre mot de passe
             </template>
             <template #content>
-                <Message
+                <UAlert
                     v-if="$page.props.status"
                     severity="success"
                 >
                     {{ $page.props.status }}
-                </Message>
+                </UAlert>
                 <form
                     class="space-y-6"
                     @submit.prevent="form.post('/reset-password')"
                 >
                     <div class="flex flex-col gap-2">
                         <label for="username">Email</label>
-                        <InputText
+                        <UInput
                             v-model="form.email"
                             name="email"
                             label="Email"
@@ -31,7 +31,7 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <label for="password">Mot de passe</label>
-                        <InputText
+                        <UInput
                             v-model="form.password"
                             name="password"
                             type="password"
@@ -41,7 +41,7 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <label for="password">Confirmer le mot de passe</label>
-                        <InputText
+                        <UInput
                             v-model="form.password_confirmation"
                             name="password_confirmation"
                             type="password"
@@ -59,7 +59,7 @@
                     </div>
                 </form>
             </template>
-        </Card>
+        </UCard>
 
         <p class="text-center text-sm leading-6 mt-10 text-gray-500">
             Got your memory back?
