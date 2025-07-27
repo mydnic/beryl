@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use wapmorgan\Mp3Info\Mp3Info;
+use getID3;
 
 class Music extends Model
 {
@@ -36,15 +36,40 @@ class Music extends Model
 
     public function syncTags()
     {
-        $audio = new Mp3Info($this->filepath, true);
-        $this->title = $audio->tags['song'] ?? null;
-        $this->artist = $audio->tags['artist'] ?? null;
-        $this->album = $audio->tags['album'] ?? null;
-        $this->release_year = !empty($audio->tags['year']) ? $audio->tags['year'] : null;
-        $this->genre = $audio->tags['genre'] ?? null;
+        $getID3 = new getID3;
+        $fileInfo = $getID3->analyze($this->filepath);
+
+        // Extract tags from the file
+        $tags = $fileInfo['tags'] ?? [];
+
+        // GetID3 stores tags in arrays by format (id3v2, id3v1, quicktime, etc.)
+        // We'll merge all available tag formats and take the first non-empty value
+        $allTags = [];
+        foreach ($tags as $tagFormat => $tagData) {
+            foreach ($tagData as $key => $values) {
+                if (!isset($allTags[$key]) && !empty($values[0])) {
+                    $allTags[$key] = $values[0];
+                }
+            }
+        }
+
+        // Map common tag names to our database fields
+        $this->title = $allTags['title'] ?? $allTags['song'] ?? null;
+        $this->artist = $allTags['artist'] ?? null;
+        $this->album = $allTags['album'] ?? null;
+        $this->release_year = !empty($allTags['year']) ? $allTags['year'] : (!empty($allTags['date']) ? substr($allTags['date'], 0, 4) : null);
+        $this->genre = $allTags['genre'] ?? null;
+
+        // Store all metadata including file info
         $this->metadata = array_merge($this->metadata ?? [], [
-            'all_tags' => $audio->tags
+            'all_tags' => $allTags,
+            'file_format' => $fileInfo['fileformat'] ?? null,
+            'audio_format' => $fileInfo['audio']['dataformat'] ?? null,
+            'bitrate' => $fileInfo['audio']['bitrate'] ?? null,
+            'sample_rate' => $fileInfo['audio']['sample_rate'] ?? null,
+            'duration' => $fileInfo['playtime_seconds'] ?? null,
         ]);
+
         $this->save();
     }
 
