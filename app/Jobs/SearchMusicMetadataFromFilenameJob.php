@@ -25,13 +25,14 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
 
     public function handle(MusicBrainzService $musicBrainzService, DeezerService $deezerService): void
     {
-        // Extract artist and title from filename only
-        $filenameInfo = $this->extractInfoFromFilename();
+        // Get cleaned filename for search
+        $cleanedFilename = $this->getCleanedFilename();
         
-        if (empty($filenameInfo['title'])) {
-            Log::info("Could not extract title from filename", [
+        if (empty($cleanedFilename) || strlen($cleanedFilename) < 3) {
+            Log::info("Filename too short or empty for search", [
                 'music_id' => $this->music->id,
-                'filepath' => $this->music->filepath
+                'filepath' => $this->music->filepath,
+                'cleaned_filename' => $cleanedFilename
             ]);
             return;
         }
@@ -39,16 +40,8 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
         // Determine which service to use based on configuration
         $service = Config::get('music.metadata_service', 'musicbrainz');
 
-        // Prepare search parameters based only on filename
-        $searchParams = $this->prepareSearchParamsFromFilename($service, $filenameInfo);
-
-        if (empty($searchParams)) {
-            Log::info("Insufficient filename data for {$service} search", [
-                'music_id' => $this->music->id,
-                'filename_info' => $filenameInfo
-            ]);
-            return;
-        }
+        // Prepare search parameters using full filename as free search
+        $searchParams = $this->prepareSearchParamsFromFilename($service, $cleanedFilename);
 
         // Search using the configured service
         $searchResults = $this->performSearch($service, $searchParams, $musicBrainzService, $deezerService);
@@ -57,7 +50,7 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
             Log::info("No {$service} results found for filename search", [
                 'music_id' => $this->music->id,
                 'search_params' => $searchParams,
-                'filename_info' => $filenameInfo
+                'cleaned_filename' => $cleanedFilename
             ]);
 
             // Mark as no result for the specific service (filename-based search)
@@ -94,25 +87,22 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
      * Prepare search parameters from filename info only
      *
      * @param string $service
-     * @param array $filenameInfo
+     * @param string $cleanedFilename
      * @return array
      */
-    protected function prepareSearchParamsFromFilename(string $service, array $filenameInfo): array
+    protected function prepareSearchParamsFromFilename(string $service, string $cleanedFilename): array
     {
         $params = [];
 
-        // Use filename-extracted title
-        if (!empty($filenameInfo['title'])) {
+        // Use cleaned filename as free search
+        if (!empty($cleanedFilename)) {
             if ($service === 'musicbrainz') {
-                $params['recording'] = $filenameInfo['title'];
+                // For MusicBrainz, use the filename as a general recording search
+                $params['recording'] = $cleanedFilename;
             } else {
-                $params['title'] = $filenameInfo['title'];
+                // For Deezer, use the filename as title search (it will be combined in buildQueryString)
+                $params['title'] = $cleanedFilename;
             }
-        }
-
-        // Use filename-extracted artist if available
-        if (!empty($filenameInfo['artist'])) {
-            $params['artist'] = $filenameInfo['artist'];
         }
 
         return $params;
@@ -131,9 +121,11 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     {
         try {
             if ($service === 'musicbrainz') {
-                return $musicBrainzService->searchRecordings($searchParams);
+                $results = $musicBrainzService->searchRecording($searchParams);
+                return empty($results) || empty($results['recordings']) ? [] : $results;
             } else {
-                return $deezerService->searchTracks($searchParams);
+                $results = $deezerService->searchTrack($searchParams);
+                return empty($results) || empty($results['data']) ? [] : $results;
             }
         } catch (Exception $e) {
             Log::error("Error searching {$service} with filename data", [
@@ -218,63 +210,15 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     }
 
     /**
-     * Extract artist and title from filename
+     * Get cleaned filename for search
      *
-     * @return array
-     */
-    protected function extractInfoFromFilename(): array
-    {
-        $filename = pathinfo($this->music->filepath, PATHINFO_FILENAME);
-        $result = ['artist' => null, 'title' => null];
-        
-        // Clean up the filename - remove common unwanted parts
-        $filename = $this->cleanFilename($filename);
-        
-        // Try different common patterns to extract artist and title
-        $patterns = [
-            // Pattern: "Artist - Title"
-            '/^(.+?)\s*-\s*(.+)$/',
-            // Pattern: "Artist_Title" (underscore separator)
-            '/^(.+?)_(.+)$/',
-            // Pattern: "01. Artist - Title" (with track number)
-            '/^\d+\.?\s*(.+?)\s*-\s*(.+)$/',
-            // Pattern: "01 - Artist - Title" (track number with dash)
-            '/^\d+\s*-\s*(.+?)\s*-\s*(.+)$/',
-            // Pattern: "Artist Title" (space separator, try to split intelligently)
-            '/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(.+)$/',
-        ];
-        
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $filename, $matches)) {
-                $artist = trim($matches[1]);
-                $title = trim($matches[2]);
-                
-                // Basic validation - avoid very short or suspicious matches
-                if (strlen($artist) >= 2 && strlen($title) >= 2) {
-                    $result['artist'] = $this->cleanExtractedText($artist);
-                    $result['title'] = $this->cleanExtractedText($title);
-                    break;
-                }
-            }
-        }
-        
-        // If no pattern matched but we have a reasonable filename, use it as title
-        if (empty($result['title']) && strlen($filename) >= 3) {
-            $result['title'] = $this->cleanExtractedText($filename);
-        }
-        
-        return $result;
-    }
-    
-    /**
-     * Clean filename by removing common unwanted parts
-     *
-     * @param string $filename
      * @return string
      */
-    protected function cleanFilename(string $filename): string
+    protected function getCleanedFilename(): string
     {
-        // Remove common unwanted patterns
+        $filename = pathinfo($this->music->filepath, PATHINFO_FILENAME);
+        
+        // Clean up the filename - remove common unwanted parts
         $unwantedPatterns = [
             '/\[.*?\]/',           // Remove [brackets content]
             '/\(.*?\)/',           // Remove (parentheses content) 
@@ -294,32 +238,5 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
         }
         
         return trim($filename);
-    }
-    
-    /**
-     * Clean extracted text (artist or title)
-     *
-     * @param string $text
-     * @return string
-     */
-    protected function cleanExtractedText(string $text): string
-    {
-        // Remove common quality indicators and unwanted text
-        $unwantedPatterns = [
-            '/\b(320kbps?|256kbps?|192kbps?|128kbps?)\b/i',
-            '/\b(mp3|flac|wav|m4a|ogg)\b/i',
-            '/\b(hq|high.?quality|lossless)\b/i',
-            '/\b(www\.[^\s]+)\b/i',        // Remove website URLs
-            '/\b([a-z]+\.[a-z]{2,4})\b/i', // Remove domain names
-            '/[_\-]+$/',                    // Remove trailing underscores/dashes
-            '/^[_\-]+/',                    // Remove leading underscores/dashes
-        ];
-        
-        foreach ($unwantedPatterns as $pattern) {
-            $text = preg_replace($pattern, '', $text);
-        }
-        
-        // Clean up spacing and return
-        return trim(preg_replace('/\s+/', ' ', $text));
     }
 }
