@@ -22,14 +22,15 @@ class JobController extends Controller
         // Get job statistics from the jobs table
         $totalJobs = DB::table('jobs')->count();
         $failedJobs = DB::table('failed_jobs')->count();
-        
+
         // Get job counts by type
         $jobsByType = DB::table('jobs')
             ->select(DB::raw('
-                CASE 
+                CASE
                     WHEN payload LIKE "%ScanMusicDirectory%" THEN "Directory Scanning"
                     WHEN payload LIKE "%ProcessMusicFileJob%" THEN "Processing Files"
                     WHEN payload LIKE "%SearchMusicMetadataJob%" THEN "Fetching Metadata"
+                    WHEN payload LIKE "%SearchMusicMetadataFromFilenameJob%" THEN "Fetching Metadata"
                     ELSE "Other"
                 END as job_type
             '), DB::raw('COUNT(*) as count'))
@@ -47,7 +48,7 @@ class JobController extends Controller
             ->map(function ($job) {
                 $payload = json_decode($job->payload, true);
                 $jobClass = $payload['displayName'] ?? 'Unknown';
-                
+
                 return [
                     'job_class' => $jobClass,
                     'failed_at' => $job->failed_at,
