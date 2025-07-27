@@ -1,6 +1,6 @@
 <template>
     <Head :title="pageTitle" />
-    
+
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header Section -->
@@ -302,12 +302,12 @@ const sortOptions = [
 
 const pageTitle = computed(() => {
     if (needsFixing.value) {
-        return 'Tracks that need fixing'
+        return 'Beryl - Tracks that need fixing'
     }
     if (searchQuery.value) {
-        return `Search results for "${searchQuery.value}"`
+        return `Beryl - Search results for "${searchQuery.value}"`
     }
-    return 'Music Library'
+    return 'Beryl - Music Library'
 })
 
 // Methods
