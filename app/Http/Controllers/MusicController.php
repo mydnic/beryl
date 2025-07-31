@@ -31,20 +31,26 @@ class MusicController extends Controller
 
         // Handle "needs fixing" filter
         if ($request->boolean('needs_fixing')) {
-            $query->whereNotNull('api_results')
-                  ->where(function ($q) {
-                      $q->whereRaw("
-                          CASE
-                              WHEN json_extract(api_results, '$.deezer.data[0]') IS NOT NULL THEN
-                                  (title != json_extract(api_results, '$.deezer.data[0].title') OR
-                                   artist != json_extract(api_results, '$.deezer.data[0].artist.name') OR
-                                   album != json_extract(api_results, '$.deezer.data[0].album.title') OR
-                                   (release_year IS NOT NULL AND json_extract(api_results, '$.deezer.data[0].album.release_date') IS NOT NULL AND
-                                    release_year != CAST(substr(json_extract(api_results, '$.deezer.data[0].album.release_date'), 1, 4) AS INTEGER)))
-                              ELSE 0
-                          END
-                      ");
-                  });
+            $query->whereHas('metadataResults', function ($metadataQuery) {
+                // Only include music records where ALL metadata results have at least one different property
+                // This means if ANY result matches perfectly, the record should NOT be included
+                $metadataQuery->where(function ($q) {
+                    $q->whereRaw('
+                        (music.title IS NULL OR music_metadata_results.title IS NULL OR music.title != music_metadata_results.title) OR
+                        (music.artist IS NULL OR music_metadata_results.artist IS NULL OR music.artist != music_metadata_results.artist) OR
+                        (music.album IS NULL OR music_metadata_results.album IS NULL OR music.album != music_metadata_results.album) OR
+                        (music.release_year IS NULL OR music_metadata_results.release_year IS NULL OR music.release_year != music_metadata_results.release_year)
+                    ');
+                });
+            })->whereDoesntHave('metadataResults', function ($perfectMatchQuery) {
+                // Exclude records that have at least one perfect match
+                $perfectMatchQuery->whereRaw('
+                    (music.title IS NOT NULL AND music_metadata_results.title IS NOT NULL AND music.title = music_metadata_results.title) AND
+                    (music.artist IS NOT NULL AND music_metadata_results.artist IS NOT NULL AND music.artist = music_metadata_results.artist) AND
+                    (music.album IS NOT NULL AND music_metadata_results.album IS NOT NULL AND music.album = music_metadata_results.album) AND
+                    (music.release_year IS NOT NULL AND music_metadata_results.release_year IS NOT NULL AND music.release_year = music_metadata_results.release_year)
+                ');
+            });
         }
 
         // Handle sorting

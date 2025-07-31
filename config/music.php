@@ -7,10 +7,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls which service will be used for searching music metadata.
-    | Supported: "musicbrainz", "deezer"
+    | Supported: "musicbrainz", "deezer", "spotify"
     |
     */
-    'metadata_service' => env('MUSIC_METADATA_SERVICE', 'musicbrainz'),
+    'metadata_service' => env('MUSIC_METADATA_SERVICE', 'deezer'),
 
     /*
     |--------------------------------------------------------------------------

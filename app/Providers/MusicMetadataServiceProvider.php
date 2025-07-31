@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\MusicMetadataServiceInterface;
 use App\Services\DeezerService;
 use App\Services\MusicBrainzService;
+use App\Services\SpotifyService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Config;
 
@@ -20,6 +21,7 @@ class MusicMetadataServiceProvider extends ServiceProvider
 
             return match ($service) {
                 'deezer' => $app->make(DeezerService::class),
+                'spotify' => $app->make(SpotifyService::class),
                 'musicbrainz' => $app->make(MusicBrainzService::class),
                 default => $app->make(MusicBrainzService::class),
             };
