@@ -211,6 +211,8 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     {
         $filename = pathinfo($this->music->filepath, PATHINFO_FILENAME);
 
+        return str($filename)->replace(['(', ')', '[', ']', '{', '}', '_', '-'], ' ')->toString();
+
         // Clean up the filename - remove common unwanted parts
         $unwantedPatterns = [
             '/\[.*?\]/',           // Remove [brackets content]

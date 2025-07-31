@@ -10,7 +10,7 @@ return [
     | Supported: "musicbrainz", "deezer"
     |
     */
-    'metadata_service' => env('MUSIC_METADATA_SERVICE', 'deezer'),
+    'metadata_service' => env('MUSIC_METADATA_SERVICE', 'musicbrainz'),
 
     /*
     |--------------------------------------------------------------------------
