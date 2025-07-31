@@ -16,10 +16,6 @@ class Music extends Model
 
     protected $casts = [
         'metadata' => 'array',
-        'api_results' => 'array',
-        'results' => 'array',
-        'musicbrainz_no_result' => 'boolean',
-        'deezer_no_result' => 'boolean',
     ];
 
     protected $appends = ['relative_path'];

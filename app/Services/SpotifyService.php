@@ -39,7 +39,7 @@ class SpotifyService implements MusicMetadataServiceInterface
         }
 
         $results = $this->searchTrack($params);
-        
+
         if (empty($results) || empty($results['tracks']['items'])) {
             return [];
         }
@@ -92,7 +92,7 @@ class SpotifyService implements MusicMetadataServiceInterface
                 'title' => $track['name'] ?? null,
                 'artist' => $track['artists'][0]['name'] ?? null,
                 'album' => $track['album']['name'] ?? null,
-                'release_year' => isset($track['album']['release_date']) 
+                'release_year' => isset($track['album']['release_date'])
                     ? (int) substr($track['album']['release_date'], 0, 4)
                     : null,
                 'score' => $track['popularity'] ?? 0, // Spotify uses popularity (0-100)
@@ -136,15 +136,11 @@ class SpotifyService implements MusicMetadataServiceInterface
         $queryParts = [];
 
         if (!empty($params['artist'])) {
-            $queryParts[] = 'artist:' . $this->sanitizeQueryParam($params['artist']);
+            $queryParts[] = $this->sanitizeQueryParam($params['artist']);
         }
 
         if (!empty($params['title'])) {
-            $queryParts[] = 'track:' . $this->sanitizeQueryParam($params['title']);
-        }
-
-        if (!empty($params['album'])) {
-            $queryParts[] = 'album:' . $this->sanitizeQueryParam($params['album']);
+            $queryParts[] = $this->sanitizeQueryParam($params['title']);
         }
 
         // If no specific fields, treat as general search
@@ -165,9 +161,7 @@ class SpotifyService implements MusicMetadataServiceInterface
     {
         // Spotify requires quotes for phrases with spaces
         $sanitized = trim($param);
-        if (str_contains($sanitized, ' ')) {
-            return '"' . $sanitized . '"';
-        }
+
         return $sanitized;
     }
 
@@ -181,7 +175,7 @@ class SpotifyService implements MusicMetadataServiceInterface
     protected function searchApi(string $endpoint, array $params = []): ?array
     {
         $accessToken = $this->getAccessToken();
-        
+
         if (!$accessToken) {
             Log::error('Failed to get Spotify access token');
             return null;

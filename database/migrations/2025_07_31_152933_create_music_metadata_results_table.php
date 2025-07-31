@@ -28,6 +28,13 @@ return new class extends Migration
             $table->index(['music_id', 'service', 'search_type']);
             $table->index(['score']);
         });
+
+        Schema::table('music', function (Blueprint $table) {
+            $table->dropColumn('api_results');
+            $table->dropColumn('results');
+            $table->dropColumn('musicbrainz_no_result');
+            $table->dropColumn('deezer_no_result');
+        });
     }
 
     /**

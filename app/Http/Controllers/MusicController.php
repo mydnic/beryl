@@ -16,7 +16,7 @@ class MusicController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Music::query();
+        $query = Music::query()->with('metadataResults');
 
         // Handle search
         if ($request->filled('search')) {
@@ -99,11 +99,7 @@ class MusicController extends Controller
 
     public function searchMetadata(Music $music)
     {
-        if (request()->boolean('filename_only')) {
-            dispatch(new SearchMusicMetadataFromFilenameJob($music));
-        } else {
-            dispatch(new SearchMusicMetadataJob($music));
-        }
+        dispatch(new SearchMusicMetadataJob($music));
 
         return back();
     }

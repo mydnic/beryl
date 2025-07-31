@@ -17,13 +17,13 @@ class MusicMetadataServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(MusicMetadataServiceInterface::class, function ($app) {
-            $service = Config::get('music.metadata_service', 'musicbrainz');
+            $service = Config::get('music.metadata_service', 'deezer');
 
             return match ($service) {
                 'deezer' => $app->make(DeezerService::class),
                 'spotify' => $app->make(SpotifyService::class),
                 'musicbrainz' => $app->make(MusicBrainzService::class),
-                default => $app->make(MusicBrainzService::class),
+                default => $app->make(DeezerService::class),
             };
         });
     }

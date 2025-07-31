@@ -10,10 +10,10 @@
             <div class="flex-1 min-w-0">
                 Album
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="min-w-20">
                 Release
             </div>
-            <div class="w-20" />
+            <div class="w-[170px]" />
         </div>
         <div class="flex gap-2 text-xs bg-slate-50 dark:bg-slate-800 px-2 mb-2 py-1 items-center">
             <div class="flex-1 min-w-0">
@@ -37,14 +37,14 @@
                     {{ music.album }}
                 </UBadge>
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="min-w-20">
                 <UBadge
                     color="success"
                 >
                     {{ music.release_year }}
                 </UBadge>
             </div>
-            <div class="w-20 flex justify-end">
+            <div class="w-[170px] flex justify-end">
                 <UDropdownMenu
                     :items="[
                         [
@@ -53,13 +53,6 @@
                                 icon: 'i-lucide-search',
                                 onSelect: () => {
                                     $inertia.post(`/music/${music.id}/metadata`)
-                                }
-                            },
-                            {
-                                label: 'Search Metadata (filename only)',
-                                icon: 'i-lucide-search',
-                                onSelect: () => {
-                                    $inertia.post(`/music/${music.id}/metadata` + '?filename_only=true')
                                 }
                             },
                             {
@@ -80,12 +73,12 @@
             </div>
         </div>
         <div
-            v-if="results"
+            v-if="music.metadata_results?.length"
             class="mt-2 max-h-46 overflow-y-auto"
         >
             <div class="space-y-1 px-2 divide-slate-100 divide-y">
                 <div
-                    v-for="(result, index) in results"
+                    v-for="(result, index) in music.metadata_results"
                     :key="result.id"
                     class="flex gap-2 font-semibold mb-2 pb-2 text-xs"
                 >
@@ -115,7 +108,7 @@
                             {{ result.album }}
                         </UBadge>
                     </div>
-                    <div class="flex-1 min-w-0">
+                    <div class="min-w-20">
                         <UBadge
                             v-if="result.release_year"
                             variant="subtle"
@@ -124,7 +117,21 @@
                             {{ result.release_year }}
                         </UBadge>
                     </div>
-                    <div class="w-20">
+                    <div class="w-[170px] items-center flex justify-end space-x-2">
+                        <div>
+                            <UBadge
+                                variant="soft"
+                                size="sm"
+                                :color="{
+                                    musicbrainz: 'warning',
+                                    deezer: 'info',
+                                    spotify: 'success'
+                                }[result.service]"
+                            >
+                                {{ result.service }} - {{ result.score }}%
+                            </UBadge>
+                        </div>
+
                         <UButton
                             icon="i-lucide-check-check"
                             color="neutral"
@@ -160,14 +167,11 @@ export default {
 
     data () {
         return {
-            loading: false,
-            results: []
+            loading: false
         }
     },
 
     created () {
-        this.results = this.music.results
-
         // useEchoPublic(
         //     `music`,
         //     'MusicResultFetchedEvent',

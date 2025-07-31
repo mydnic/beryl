@@ -20,7 +20,7 @@ class DeezerService implements MusicMetadataServiceInterface
     public function search(array $params): array
     {
         $results = $this->searchTrack($params);
-        
+
         if (empty($results) || empty($results['data'])) {
             return [];
         }
@@ -73,7 +73,7 @@ class DeezerService implements MusicMetadataServiceInterface
                 'title' => $track['title'] ?? null,
                 'artist' => $track['artist']['name'] ?? null,
                 'album' => $track['album']['title'] ?? null,
-                'release_year' => isset($track['album']['release_date']) 
+                'release_year' => isset($track['album']['release_date'])
                     ? (int) substr($track['album']['release_date'], 0, 4)
                     : null,
                 'score' => $track['rank'] ?? 0, // Deezer uses 'rank' as popularity score
@@ -129,10 +129,6 @@ class DeezerService implements MusicMetadataServiceInterface
 
         if (!empty($params['title'])) {
             $queryParts[] = $this->sanitizeQueryParam($params['title']);
-        }
-
-        if (!empty($params['album'])) {
-            $queryParts[] = $this->sanitizeQueryParam($params['album']);
         }
 
         return implode(' ', $queryParts);
