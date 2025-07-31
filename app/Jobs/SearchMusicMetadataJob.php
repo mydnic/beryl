@@ -93,6 +93,9 @@ class SearchMusicMetadataJob implements ShouldQueue
     protected function storeUnifiedResults(MusicMetadataServiceInterface $metadataService, array $searchResults): void
     {
         foreach ($searchResults as $result) {
+            // Calculate custom similarity score
+            $customScore = $this->calculateSimilarityScore($result);
+            
             MusicMetadataResult::create([
                 'music_id' => $this->music->id,
                 'service' => $metadataService->getServiceName(),
@@ -101,7 +104,7 @@ class SearchMusicMetadataJob implements ShouldQueue
                 'artist' => $result['artist'],
                 'album' => $result['album'],
                 'release_year' => $result['release_year'],
-                'score' => $result['score'],
+                'score' => $customScore,
                 'external_id' => $result['external_id'],
                 'raw_data' => $result['raw_data'],
             ]);
@@ -266,5 +269,150 @@ class SearchMusicMetadataJob implements ShouldQueue
 
         // Clean up spacing and return
         return trim(preg_replace('/\s+/', ' ', $text));
+    }
+
+    /**
+     * Calculate similarity score between search result and existing music data
+     *
+     * @param array $result
+     * @return float Score between 0 and 100
+     */
+    protected function calculateSimilarityScore(array $result): float
+    {
+        $totalWeight = 0;
+        $matchedWeight = 0;
+
+        // Title comparison (weight: 40%)
+        if (!empty($this->music->title) && !empty($result['title'])) {
+            $titleWeight = 40;
+            $totalWeight += $titleWeight;
+            $titleSimilarity = $this->calculateStringSimilarity($this->music->title, $result['title']);
+            $matchedWeight += $titleSimilarity * $titleWeight;
+        }
+
+        // Artist comparison (weight: 35%)
+        if (!empty($this->music->artist) && !empty($result['artist'])) {
+            $artistWeight = 35;
+            $totalWeight += $artistWeight;
+            $artistSimilarity = $this->calculateStringSimilarity($this->music->artist, $result['artist']);
+            $matchedWeight += $artistSimilarity * $artistWeight;
+        }
+
+        // Album comparison (weight: 20%)
+        if (!empty($this->music->album) && !empty($result['album'])) {
+            $albumWeight = 20;
+            $totalWeight += $albumWeight;
+            $albumSimilarity = $this->calculateStringSimilarity($this->music->album, $result['album']);
+            $matchedWeight += $albumSimilarity * $albumWeight;
+        }
+
+        // Release year comparison (weight: 5%)
+        if (!empty($this->music->release_year) && !empty($result['release_year'])) {
+            $yearWeight = 5;
+            $totalWeight += $yearWeight;
+            $yearSimilarity = $this->calculateYearSimilarity($this->music->release_year, $result['release_year']);
+            $matchedWeight += $yearSimilarity * $yearWeight;
+        }
+
+        // If no fields to compare, return 0
+        if ($totalWeight === 0) {
+            return 0;
+        }
+
+        // Calculate final score as percentage
+        return round(($matchedWeight / $totalWeight) * 100, 2);
+    }
+
+    /**
+     * Calculate string similarity between two strings
+     *
+     * @param string $str1
+     * @param string $str2
+     * @return float Similarity between 0 and 1
+     */
+    protected function calculateStringSimilarity(string $str1, string $str2): float
+    {
+        // Normalize strings for comparison
+        $normalized1 = $this->normalizeString($str1);
+        $normalized2 = $this->normalizeString($str2);
+
+        // Exact match gets perfect score
+        if ($normalized1 === $normalized2) {
+            return 1.0;
+        }
+
+        // Use Levenshtein distance for similarity calculation
+        $maxLength = max(strlen($normalized1), strlen($normalized2));
+        if ($maxLength === 0) {
+            return 0.0;
+        }
+
+        $distance = levenshtein($normalized1, $normalized2);
+        $similarity = 1 - ($distance / $maxLength);
+
+        // Also check if one string contains the other (partial match)
+        $containsSimilarity = 0;
+        if (str_contains($normalized1, $normalized2) || str_contains($normalized2, $normalized1)) {
+            $containsSimilarity = 0.8; // High score for partial matches
+        }
+
+        // Return the higher of the two similarity scores
+        return max($similarity, $containsSimilarity);
+    }
+
+    /**
+     * Calculate year similarity
+     *
+     * @param int $year1
+     * @param int $year2
+     * @return float Similarity between 0 and 1
+     */
+    protected function calculateYearSimilarity(int $year1, int $year2): float
+    {
+        $difference = abs($year1 - $year2);
+        
+        // Exact match
+        if ($difference === 0) {
+            return 1.0;
+        }
+        
+        // 1 year difference = 0.8
+        if ($difference === 1) {
+            return 0.8;
+        }
+        
+        // 2 years difference = 0.6
+        if ($difference === 2) {
+            return 0.6;
+        }
+        
+        // 3+ years difference = 0 (too different)
+        return 0.0;
+    }
+
+    /**
+     * Normalize string for comparison
+     *
+     * @param string $str
+     * @return string
+     */
+    protected function normalizeString(string $str): string
+    {
+        // Convert to lowercase
+        $normalized = strtolower($str);
+        
+        // Remove common words that don't affect matching
+        $commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'feat', 'ft'];
+        $words = explode(' ', $normalized);
+        $words = array_filter($words, function($word) use ($commonWords) {
+            return !in_array(trim($word), $commonWords);
+        });
+        $normalized = implode(' ', $words);
+        
+        // Remove special characters and extra spaces
+        $normalized = preg_replace('/[^\w\s]/', '', $normalized);
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        
+        return trim($normalized);
     }
 }

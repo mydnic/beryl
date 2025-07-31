@@ -126,11 +126,24 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
                 'artist' => $result['artist'],
                 'album' => $result['album'],
                 'release_year' => $result['release_year'],
-                'score' => $result['score'],
+                'score' => $this->calculateSimilarityScore($result),
                 'external_id' => $result['external_id'],
                 'raw_data' => $result['raw_data'],
             ]);
         }
+    }
+
+    protected function calculateSimilarityScore(array $result): float
+    {
+        $music = "{$result->music->title} {$result->music->artist} {$result->music->album} {$result->music->release_year}";
+        $search = "{$result->title} {$result->artist} {$result->album} {$result->release_year}";
+
+        $music = strtolower($music);
+        $search = strtolower($search);
+
+        similar_text($music, $search, $score);
+
+        return $score;
     }
 
     /**
