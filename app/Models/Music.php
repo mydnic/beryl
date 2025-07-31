@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use getID3;
+use App\Models\MusicMetadataResult;
 
 class Music extends Model
 {
@@ -83,5 +85,13 @@ class Music extends Model
     public function getRelativePathAttribute()
     {
         return str_replace(config('filesystems.disks.music_directory.root') . '/', '', $this->filepath);
+    }
+
+    /**
+     * Get the metadata results for this music record
+     */
+    public function metadataResults(): HasMany
+    {
+        return $this->hasMany(MusicMetadataResult::class);
     }
 }

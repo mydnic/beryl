@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Contracts\MusicMetadataServiceInterface;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
-class MusicBrainzService
+class MusicBrainzService implements MusicMetadataServiceInterface
 {
     protected string $baseUrl = 'https://musicbrainz.org/ws/2';
     protected string $userAgent;
@@ -16,7 +18,82 @@ class MusicBrainzService
     {
         // MusicBrainz requires a proper user agent with contact information
         // https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting
-        $this->userAgent = 'Beryl/1.0 ( rigoclement@mydnic.be )';
+        $this->userAgent = Config::get('music.musicbrainz.user_agent', 'Beryl/1.0 ( rigoclement@mydnic.be )');
+        $this->throttleTime = Config::get('music.musicbrainz.throttle_time', 1);
+    }
+
+    /**
+     * Search for music metadata based on search parameters
+     *
+     * @param array $params Search parameters (artist, title, album, recording, etc.)
+     * @return array Array of standardized metadata results
+     */
+    public function search(array $params): array
+    {
+        $results = $this->searchRecording($params);
+        
+        if (empty($results) || empty($results['recordings'])) {
+            return [];
+        }
+
+        return $this->normalizeResults($results['recordings']);
+    }
+
+    /**
+     * Get the service name/identifier
+     *
+     * @return string
+     */
+    public function getServiceName(): string
+    {
+        return 'musicbrainz';
+    }
+
+    /**
+     * Check if the service requires throttling between requests
+     *
+     * @return bool
+     */
+    public function requiresThrottling(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the throttle time in seconds (if throttling is required)
+     *
+     * @return int
+     */
+    public function getThrottleTime(): int
+    {
+        return $this->throttleTime;
+    }
+
+    /**
+     * Normalize MusicBrainz results to standardized format
+     *
+     * @param array $recordings
+     * @return array
+     */
+    protected function normalizeResults(array $recordings): array
+    {
+        $normalized = [];
+
+        foreach ($recordings as $recording) {
+            $normalized[] = [
+                'title' => $recording['title'] ?? null,
+                'artist' => $recording['artist-credit'][0]['name'] ?? null,
+                'album' => $recording['releases'][0]['title'] ?? null,
+                'release_year' => isset($recording['releases'][0]['date'])
+                    ? (int) substr($recording['releases'][0]['date'], 0, 4)
+                    : null,
+                'score' => $recording['score'] ?? 0,
+                'external_id' => $recording['id'] ?? null,
+                'raw_data' => $recording,
+            ];
+        }
+
+        return $normalized;
     }
 
     /**
@@ -43,7 +120,7 @@ class MusicBrainzService
 
         $query = implode(' ', $queryParams);
 
-        return $this->search('recording', $query);
+        return $this->searchEntity('recording', $query);
     }
 
     /**
@@ -67,7 +144,7 @@ class MusicBrainzService
      * @param int $limit Results limit
      * @return array|null
      */
-    protected function search(string $entity, string $query, int $limit = 10): ?array
+    protected function searchEntity(string $entity, string $query, int $limit = 10): ?array
     {
         return $this->request("$entity", [
             'query' => $query,

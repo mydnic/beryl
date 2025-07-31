@@ -2,13 +2,88 @@
 
 namespace App\Services;
 
+use App\Contracts\MusicMetadataServiceInterface;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class DeezerService
+class DeezerService implements MusicMetadataServiceInterface
 {
     protected string $baseUrl = 'https://api.deezer.com';
+
+    /**
+     * Search for music metadata based on search parameters
+     *
+     * @param array $params Search parameters (artist, title, album)
+     * @return array Array of standardized metadata results
+     */
+    public function search(array $params): array
+    {
+        $results = $this->searchTrack($params);
+        
+        if (empty($results) || empty($results['data'])) {
+            return [];
+        }
+
+        return $this->normalizeResults($results['data']);
+    }
+
+    /**
+     * Get the service name/identifier
+     *
+     * @return string
+     */
+    public function getServiceName(): string
+    {
+        return 'deezer';
+    }
+
+    /**
+     * Check if the service requires throttling between requests
+     *
+     * @return bool
+     */
+    public function requiresThrottling(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Get the throttle time in seconds (if throttling is required)
+     *
+     * @return int
+     */
+    public function getThrottleTime(): int
+    {
+        return 0;
+    }
+
+    /**
+     * Normalize Deezer results to standardized format
+     *
+     * @param array $tracks
+     * @return array
+     */
+    protected function normalizeResults(array $tracks): array
+    {
+        $normalized = [];
+
+        foreach ($tracks as $track) {
+            $normalized[] = [
+                'title' => $track['title'] ?? null,
+                'artist' => $track['artist']['name'] ?? null,
+                'album' => $track['album']['title'] ?? null,
+                'release_year' => isset($track['album']['release_date']) 
+                    ? (int) substr($track['album']['release_date'], 0, 4)
+                    : null,
+                'score' => $track['rank'] ?? 0, // Deezer uses 'rank' as popularity score
+                'external_id' => $track['id'] ?? null,
+                'raw_data' => $track,
+            ];
+        }
+
+        return $normalized;
+    }
 
     /**
      * Search for tracks based on query parameters
@@ -24,7 +99,7 @@ class DeezerService
             return null;
         }
 
-        return $this->search('search', $queryString);
+        return $this->searchApi('search', $queryString);
     }
 
     /**
@@ -83,7 +158,7 @@ class DeezerService
      * @param int $limit Results limit
      * @return array|null
      */
-    protected function search(string $endpoint, string $query, int $limit = 10): ?array
+    protected function searchApi(string $endpoint, string $query, int $limit = 10): ?array
     {
         return $this->request($endpoint, [
             'q' => $query,
