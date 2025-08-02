@@ -19,8 +19,18 @@ class TriggerMetadataSearchJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Always dispatch MusicBrainz and Deezer (no API keys required)
         dispatch(new SearchMusicMetadataJob($this->music, 'musicbrainz'));
         dispatch(new SearchMusicMetadataJob($this->music, 'deezer'));
-        dispatch(new SearchMusicMetadataJob($this->music, 'spotify'));
+        
+        // Only dispatch Spotify if API credentials are configured
+        if (config('services.spotify.client_id') && config('services.spotify.client_secret')) {
+            dispatch(new SearchMusicMetadataJob($this->music, 'spotify'));
+        }
+        
+        // Only dispatch Last.fm if API key is configured
+        if (config('services.lastfm.api_key')) {
+            dispatch(new SearchMusicMetadataJob($this->music, 'lastfm'));
+        }
     }
 }

@@ -31,6 +31,7 @@ class SearchMusicMetadataJob implements ShouldQueue
             'musicbrainz' => app(\App\Services\MusicBrainzService::class),
             'deezer' => app(\App\Services\DeezerService::class),
             'spotify' => app(\App\Services\SpotifyService::class),
+            'lastfm' => app(\App\Services\LastfmService::class),
             default => throw new Exception("Unknown metadata service: {$this->service}")
         };
 
@@ -103,7 +104,7 @@ class SearchMusicMetadataJob implements ShouldQueue
         foreach ($searchResults as $result) {
             // Calculate custom similarity score
             $customScore = $this->calculateSimilarityScore($result);
-            
+
             MusicMetadataResult::create([
                 'music_id' => $this->music->id,
                 'service' => $metadataService->getServiceName(),
@@ -378,22 +379,22 @@ class SearchMusicMetadataJob implements ShouldQueue
     protected function calculateYearSimilarity(int $year1, int $year2): float
     {
         $difference = abs($year1 - $year2);
-        
+
         // Exact match
         if ($difference === 0) {
             return 1.0;
         }
-        
+
         // 1 year difference = 0.8
         if ($difference === 1) {
             return 0.8;
         }
-        
+
         // 2 years difference = 0.6
         if ($difference === 2) {
             return 0.6;
         }
-        
+
         // 3+ years difference = 0 (too different)
         return 0.0;
     }
@@ -408,7 +409,7 @@ class SearchMusicMetadataJob implements ShouldQueue
     {
         // Convert to lowercase
         $normalized = strtolower($str);
-        
+
         // Remove common words that don't affect matching
         $commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'feat', 'ft'];
         $words = explode(' ', $normalized);
@@ -416,11 +417,11 @@ class SearchMusicMetadataJob implements ShouldQueue
             return !in_array(trim($word), $commonWords);
         });
         $normalized = implode(' ', $words);
-        
+
         // Remove special characters and extra spaces
         $normalized = preg_replace('/[^\w\s]/', '', $normalized);
         $normalized = preg_replace('/\s+/', ' ', $normalized);
-        
+
         return trim($normalized);
     }
 }

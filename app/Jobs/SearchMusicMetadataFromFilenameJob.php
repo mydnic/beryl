@@ -29,6 +29,7 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
             'musicbrainz' => app(\App\Services\MusicBrainzService::class),
             'deezer' => app(\App\Services\DeezerService::class),
             'spotify' => app(\App\Services\SpotifyService::class),
+            'lastfm' => app(\App\Services\LastfmService::class),
             default => throw new Exception("Unknown metadata service: {$this->service}")
         };
 

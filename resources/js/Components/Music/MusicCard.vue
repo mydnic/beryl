@@ -125,7 +125,8 @@
                                 :color="{
                                     musicbrainz: 'warning',
                                     deezer: 'info',
-                                    spotify: 'success'
+                                    spotify: 'success',
+                                    lastfm: 'error'
                                 }[result.service]"
                             >
                                 {{ result.service }} - {{ result.score }}%
