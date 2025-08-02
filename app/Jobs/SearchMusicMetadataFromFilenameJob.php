@@ -18,12 +18,20 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public Music $music)
+    public function __construct(public Music $music, public string $service)
     {
     }
 
-    public function handle(MusicMetadataServiceInterface $metadataService): void
+    public function handle(): void
     {
+        // Resolve the specific metadata service based on the service parameter
+        $metadataService = match ($this->service) {
+            'musicbrainz' => app(\App\Services\MusicBrainzService::class),
+            'deezer' => app(\App\Services\DeezerService::class),
+            'spotify' => app(\App\Services\SpotifyService::class),
+            default => throw new Exception("Unknown metadata service: {$this->service}")
+        };
+
         // Get cleaned filename for search
         $cleanedFilename = $this->getCleanedFilename();
 

@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Music;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
+class TriggerMetadataSearchJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct(public Music $music)
+    {
+    }
+
+    public function handle(): void
+    {
+        dispatch(new SearchMusicMetadataJob($this->music, 'musicbrainz'));
+        dispatch(new SearchMusicMetadataJob($this->music, 'deezer'));
+        dispatch(new SearchMusicMetadataJob($this->music, 'spotify'));
+    }
+}

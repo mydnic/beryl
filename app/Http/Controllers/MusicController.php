@@ -6,6 +6,7 @@ use App\Actions\Music\MusicScanner;
 use App\Jobs\ProcessMusicFileJob;
 use App\Jobs\SearchMusicMetadataFromFilenameJob;
 use App\Jobs\SearchMusicMetadataJob;
+use App\Jobs\TriggerMetadataSearchJob;
 use App\Models\Music;
 use Exception;
 use getID3_writetags;
@@ -16,7 +17,10 @@ class MusicController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Music::query()->with('metadataResults');
+        $query = Music::query()
+            ->with(['metadataResults' => function ($q) {
+                $q->orderByDesc('score');
+            }]);
 
         // Handle search
         if ($request->filled('search')) {
@@ -99,7 +103,8 @@ class MusicController extends Controller
 
     public function searchMetadata(Music $music)
     {
-        dispatch(new SearchMusicMetadataJob($music));
+        // Dispatch separate jobs for each metadata service
+        dispatch(new TriggerMetadataSearchJob($music));
 
         return back();
     }
