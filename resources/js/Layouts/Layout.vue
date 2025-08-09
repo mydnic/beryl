@@ -1,14 +1,15 @@
 <template>
     <UApp>
-        <div class="space-y-6 p-4">
-            <div class="flex items-center justify-between">
-                <div class="">
-                    <img
-                        src=""
-                        alt=""
-                    >
+        <div class="space-y-6">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <div class="flex max-w-7xl mx-auto items-center justify-between p-4">
+                    <div class="">
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                            Beryl
+                        </h1>
+                    </div>
+                    <ThemeSwitcher />
                 </div>
-                <ThemeSwitcher />
             </div>
             <slot />
         </div>
