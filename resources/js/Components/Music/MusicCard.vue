@@ -64,7 +64,7 @@
                                 label: 'Delete file (permanently)',
                                 icon: 'i-lucide-trash',
                                 color: 'error',
-                                onSelect: deleteMusic(music)
+                                onSelect: openDeleteConfirm
                             }
                         ]
                     ]"
@@ -219,6 +219,45 @@
                 </div>
             </template>
         </UModal>
+
+        <!-- Delete Confirmation Modal -->
+        <UModal v-model:open="showDeleteConfirm">
+            <template #content>
+                <div class="p-4 space-y-4">
+                    <div class="flex items-start gap-3">
+                        <UIcon
+                            name="i-lucide-triangle-alert"
+                            class="text-error mt-0.5 size-5 shrink-0"
+                        />
+                        <div>
+                            <h3 class="text-base font-semibold">
+                                Delete file permanently?
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                This will permanently delete the file from disk and remove it from your library. This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end gap-2">
+                        <UButton
+                            variant="ghost"
+                            color="neutral"
+                            @click="showDeleteConfirm = false"
+                        >
+                            Cancel
+                        </UButton>
+                        <UButton
+                            color="error"
+                            icon="i-lucide-trash"
+                            :loading="loading"
+                            @click="performDelete"
+                        >
+                            Delete
+                        </UButton>
+                    </div>
+                </div>
+            </template>
+        </UModal>
     </UCard>
 </template>
 
@@ -237,6 +276,7 @@ export default {
         return {
             loading: false,
             showEdit: false,
+            showDeleteConfirm: false,
             editForm: {
                 artist: this.music.artist || '',
                 title: this.music.title || '',
@@ -286,18 +326,23 @@ export default {
                 }
             })
         },
-        deleteMusic (music) {
-            return () => {
-                this.$inertia.delete(`/music/${music.id}`, {
-                    onFinish: () => {
-                        const toast = useToast()
-                        toast.add({
-                            title: 'Music deleted successfully!',
-                            description: `The music file has been deleted.`
-                        })
-                    }
-                })
-            }
+        openDeleteConfirm () {
+            this.showDeleteConfirm = true
+        },
+
+        performDelete () {
+            this.loading = true
+            this.$inertia.delete(`/music/${this.music.id}`, {
+                onFinish: () => {
+                    this.loading = false
+                    this.showDeleteConfirm = false
+                    const toast = useToast()
+                    toast.add({
+                        title: 'Music deleted successfully!',
+                        description: 'The music file has been deleted.'
+                    })
+                }
+            })
         },
 
         applyMetadata (result) {
