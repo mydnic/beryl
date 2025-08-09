@@ -11,17 +11,75 @@
                             Manage and fix metadata for your music collection
                         </p>
                     </div>
-                    <UButton
-                        to="/scan"
-                        method="post"
-                        icon="i-lucide-scan-line"
-                        size="lg"
-                        color="primary"
-                        variant="solid"
-                    >
-                        Scan Library
-                    </UButton>
+                    <UButtonGroup>
+                        <UButton
+                            to="/scan"
+                            method="post"
+                            icon="i-lucide-scan-line"
+                            size="lg"
+                            color="primary"
+                            variant="solid"
+                        >
+                            Scan Library
+                        </UButton>
+                        <UDropdownMenu
+                            :items="[
+                                [
+                                    {
+                                        label: 'Truncate & Scan',
+                                        icon: 'i-lucide-search',
+                                        onSelect: openTruncateConfirm
+                                    }
+                                ]
+                            ]"
+                        >
+                            <UButton
+                                color="primary"
+                                variant="solid"
+                                icon="i-lucide-chevron-down"
+                            />
+                        </UDropdownMenu>
+                    </UButtonGroup>
                 </div>
+
+                <!-- Truncate & Scan Confirmation Modal -->
+                <UModal v-model:open="showTruncateConfirm">
+                    <template #content>
+                        <div class="p-4 space-y-4">
+                            <div class="flex items-start gap-3">
+                                <UIcon
+                                    name="i-lucide-triangle-alert"
+                                    class="text-error mt-0.5 size-5 shrink-0"
+                                />
+                                <div>
+                                    <h3 class="text-base font-semibold">
+                                        Truncate library and scan?
+                                    </h3>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        This will delete all existing music records from the database before scanning. The original files on disk are not deleted, but all metadata in the app will be reset. Continue?
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex justify-end gap-2">
+                                <UButton
+                                    variant="ghost"
+                                    color="neutral"
+                                    @click="showTruncateConfirm = false"
+                                >
+                                    Cancel
+                                </UButton>
+                                <UButton
+                                    color="error"
+                                    icon="i-lucide-scan-line"
+                                    :loading="loadingTruncate"
+                                    @click="confirmTruncateScan"
+                                >
+                                    Truncate & Scan
+                                </UButton>
+                            </div>
+                        </div>
+                    </template>
+                </UModal>
 
                 <!-- Search and Filter Controls -->
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -277,6 +335,8 @@ const props = defineProps({
 })
 
 // Reactive data
+const showTruncateConfirm = ref(false)
+const loadingTruncate = ref(false)
 const searchQuery = ref(props.filters.search)
 const sortBy = ref(props.filters.sort_by)
 const sortOrder = ref(props.filters.sort_order)
@@ -308,6 +368,21 @@ const pageTitle = computed(() => {
 })
 
 // Methods
+const openTruncateConfirm = () => {
+    showTruncateConfirm.value = true
+}
+
+const confirmTruncateScan = () => {
+    loadingTruncate.value = true
+    router.post('/scan', { truncate: true }, {
+        preserveScroll: true,
+        onFinish: () => {
+            loadingTruncate.value = false
+            showTruncateConfirm.value = false
+        }
+    })
+}
+
 const getSortLabel = (value) => {
     const option = sortOptions.find(opt => opt.value === value)
     return option ? option.label : value
