@@ -41,8 +41,13 @@ services:
     ports:
       - "4387:80"
     volumes:
-      - /path/to/your/music:/music   # Change this to your music folder
-      - /path/to/your/data:/var/database  # SQLite DB persistence
+      - /path/to/your/music:/music # Change this to your music folder
+      - /path/to/your/data:/var/database # SQLite DB persistence
+    environment:
+      - SPOTIFY_CLIENT_ID= #optional
+      - SPOTIFY_CLIENT_SECRET= #optional
+      - LASTFM_API_KEY= #optional
+      - LASTFM_SECRET_KEY= #optional
 ```
 
 3. Edit the `docker-compose.yml` file to set the correct paths for your music folder.
