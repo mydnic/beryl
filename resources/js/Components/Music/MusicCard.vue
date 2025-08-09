@@ -49,14 +49,19 @@
                     :items="[
                         [
                             {
-                                label: 'Search Metadata',
+                                label: 'Re Search Metadata',
                                 icon: 'i-lucide-search',
                                 onSelect: () => {
                                     $inertia.post(`/music/${music.id}/metadata`)
                                 }
                             },
                             {
-                                label: 'Delete',
+                                label: 'Edit Manually',
+                                icon: 'i-lucide-pencil',
+                                onSelect: openEdit
+                            },
+                            {
+                                label: 'Delete file (permanently)',
                                 icon: 'i-lucide-trash',
                                 color: 'error',
                                 onSelect: deleteMusic(music)
@@ -152,6 +157,68 @@
             />
             <span class="text-xs text-gray-500">{{ music.filepath }}</span>
         </div>
+
+        <!-- Edit Metadata Modal -->
+        <UModal v-model:open="showEdit">
+            <template #content>
+                <div class="p-4 space-y-4">
+                    <h3 class="text-base font-semibold">
+                        Edit metadata
+                    </h3>
+                    <UForm
+                        :state="editForm"
+                        @submit.prevent="submitEdit"
+                    >
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <UFormField label="Artist">
+                                <UInput
+                                    v-model="editForm.artist"
+                                    placeholder="Artist"
+                                />
+                            </UFormField>
+                            <UFormField label="Title">
+                                <UInput
+                                    v-model="editForm.title"
+                                    placeholder="Title"
+                                />
+                            </UFormField>
+                            <UFormField
+                                label="Album"
+                                class="sm:col-span-2"
+                            >
+                                <UInput
+                                    v-model="editForm.album"
+                                    placeholder="Album"
+                                />
+                            </UFormField>
+                            <UFormField label="Release year">
+                                <UInput
+                                    v-model.number="editForm.year"
+                                    type="number"
+                                    placeholder="Year"
+                                />
+                            </UFormField>
+                        </div>
+                        <div class="mt-5 flex justify-end gap-2">
+                            <UButton
+                                variant="ghost"
+                                color="neutral"
+                                @click="showEdit = false"
+                            >
+                                Cancel
+                            </UButton>
+                            <UButton
+                                type="submit"
+                                icon="i-lucide-save"
+                                :loading="loading"
+                            >
+                                Save
+                            </UButton>
+                        </div>
+                    </UForm>
+                </div>
+            </template>
+        </UModal>
     </UCard>
 </template>
 
@@ -168,7 +235,14 @@ export default {
 
     data () {
         return {
-            loading: false
+            loading: false,
+            showEdit: false,
+            editForm: {
+                artist: this.music.artist || '',
+                title: this.music.title || '',
+                album: this.music.album || '',
+                year: this.music.release_year || ''
+            }
         }
     },
 
@@ -185,6 +259,33 @@ export default {
     },
 
     methods: {
+        openEdit () {
+            // Prefill each time in case music changed
+            this.editForm = {
+                artist: this.music.artist || '',
+                title: this.music.title || '',
+                album: this.music.album || '',
+                year: this.music.release_year || ''
+            }
+            this.showEdit = true
+        },
+
+        submitEdit () {
+            this.loading = true
+            const metadata = { ...this.editForm }
+            this.$inertia.post(`/music/${this.music.id}/apply-metadata`, { metadata }, {
+                preserveScroll: true,
+                onFinish: () => {
+                    this.loading = false
+                    this.showEdit = false
+                    const toast = useToast()
+                    toast.add({
+                        title: 'Metadata updated',
+                        description: 'Your changes have been applied.'
+                    })
+                }
+            })
+        },
         deleteMusic (music) {
             return () => {
                 this.$inertia.delete(`/music/${music.id}`, {
