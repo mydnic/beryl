@@ -14,4 +14,5 @@ Route::middleware(['hasUser'])->group(function () {
     
     // Job monitoring routes
     Route::get('/jobs/stats', [JobController::class, 'stats']);
+    Route::delete('/jobs/failed/{id}', [JobController::class, 'deleteFailed']);
 });

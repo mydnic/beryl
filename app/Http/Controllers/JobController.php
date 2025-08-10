@@ -17,6 +17,13 @@ class JobController extends Controller
         return response()->json($this->getJobStats());
     }
 
+    public function deleteFailed($id)
+    {
+        // Delete a specific failed job by ID
+        DB::table('failed_jobs')->where('id', $id)->delete();
+        return response()->json(['status' => 'ok']);
+    }
+
     private function getJobStats()
     {
         // Get job statistics from the jobs table
@@ -41,7 +48,7 @@ class JobController extends Controller
 
         // Get recent failed jobs for debugging
         $recentFailedJobs = DB::table('failed_jobs')
-            ->select('payload', 'exception', 'failed_at')
+            ->select('id', 'payload', 'exception', 'failed_at')
             ->orderBy('failed_at', 'desc')
             ->limit(5)
             ->get()
@@ -50,6 +57,7 @@ class JobController extends Controller
                 $jobClass = $payload['displayName'] ?? 'Unknown';
 
                 return [
+                    'id' => $job->id,
                     'job_class' => $jobClass,
                     'failed_at' => $job->failed_at,
                     'error' => substr($job->exception, 0, 200) . '...'

@@ -74,7 +74,7 @@
                     <div class="space-y-2">
                         <div 
                             v-for="(failure, index) in jobStats.recent_failed" 
-                            :key="index"
+                            :key="failure.id ?? index"
                             class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
                         >
                             <div class="flex items-start justify-between">
@@ -86,8 +86,19 @@
                                         {{ failure.error }}
                                     </div>
                                 </div>
-                                <div class="text-xs text-red-500 dark:text-red-400 ml-2">
-                                    {{ formatDate(failure.failed_at) }}
+                                <div class="flex items-center gap-2 ml-2">
+                                    <div class="text-xs text-red-500 dark:text-red-400">
+                                        {{ formatDate(failure.failed_at) }}
+                                    </div>
+                                    <UButton
+                                        icon="i-lucide-trash-2"
+                                        size="xs"
+                                        color="red"
+                                        variant="ghost"
+                                        :loading="deletingIds.has(failure.id)"
+                                        @click="deleteFailedJob(failure)"
+                                        :title="'Delete failed job'"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -121,6 +132,7 @@ const jobStats = ref(props.initialStats)
 const refreshing = ref(false)
 const refreshInterval = 5000 // 5 seconds
 let intervalId = null
+const deletingIds = new Set()
 
 // Auto-refresh when jobs are processing
 const startAutoRefresh = () => {
@@ -146,6 +158,37 @@ const refreshStats = async () => {
         console.error('Failed to refresh job stats:', error)
     } finally {
         refreshing.value = false
+    }
+}
+
+const getCsrfToken = () => {
+    const el = document.querySelector('meta[name="csrf-token"]')
+    return el ? el.getAttribute('content') : undefined
+}
+
+const deleteFailedJob = async (failure) => {
+    if (!failure?.id) return
+    const confirmed = window.confirm('Remove this failed job from the list?')
+    if (!confirmed) return
+    deletingIds.add(failure.id)
+    try {
+        const res = await fetch(`/jobs/failed/${failure.id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken() || ''
+            }
+        })
+        if (!res.ok) throw new Error('Failed to delete failed job')
+        // Optimistically remove from local state
+        jobStats.value.recent_failed = jobStats.value.recent_failed.filter(j => j.id !== failure.id)
+        // Also refresh counts
+        await refreshStats()
+    } catch (e) {
+        console.error(e)
+        alert('Could not delete failed job.')
+    } finally {
+        deletingIds.delete(failure.id)
     }
 }
 
