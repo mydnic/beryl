@@ -144,15 +144,110 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
 
     protected function calculateSimilarityScore(array $result): float
     {
-        $music = "{$result->music->title} {$result->music->artist} {$result->music->album} {$result->music->release_year}";
-        $search = "{$result->title} {$result->artist} {$result->album} {$result->release_year}";
+        // We compare the candidate result fields against the current music record
+        $titleMusic = $this->music->title;
+        $artistMusic = $this->music->artist;
+        $albumMusic = $this->music->album;
+        $yearMusic = $this->music->release_year;
 
-        $music = strtolower($music);
-        $search = strtolower($search);
+        $titleRes = $result['title'] ?? null;
+        $artistRes = $result['artist'] ?? null;
+        $albumRes = $result['album'] ?? null;
+        $yearRes = $result['release_year'] ?? null;
 
-        similar_text($music, $search, $score);
+        // Weights
+        $weights = [
+            'title' => 0.40,
+            'artist' => 0.35,
+            'album' => 0.20,
+            'year' => 0.05,
+        ];
 
-        return $score;
+        $scoreSum = 0.0;
+        $weightSum = 0.0;
+
+        if (!empty($titleMusic) && !empty($titleRes)) {
+            $sim = $this->stringSimilarity((string) $titleMusic, (string) $titleRes);
+            $scoreSum += $sim * $weights['title'];
+            $weightSum += $weights['title'];
+        }
+
+        if (!empty($artistMusic) && !empty($artistRes)) {
+            $sim = $this->stringSimilarity((string) $artistMusic, (string) $artistRes);
+            $scoreSum += $sim * $weights['artist'];
+            $weightSum += $weights['artist'];
+        }
+
+        if (!empty($albumMusic) && !empty($albumRes)) {
+            $sim = $this->stringSimilarity((string) $albumMusic, (string) $albumRes);
+            $scoreSum += $sim * $weights['album'];
+            $weightSum += $weights['album'];
+        }
+
+        if (!empty($yearMusic) && !empty($yearRes)) {
+            $sim = $this->yearSimilarity((int) $yearMusic, (int) $yearRes);
+            $scoreSum += $sim * $weights['year'];
+            $weightSum += $weights['year'];
+        }
+
+        if ($weightSum <= 0.0) {
+            return 0.0; // Not enough comparable data
+        }
+
+        // Convert to 0-100 percentage
+        return round(($scoreSum / $weightSum) * 100, 2);
+    }
+
+    private function stringSimilarity(string $a, string $b): float
+    {
+        $na = $this->normalizeString($a);
+        $nb = $this->normalizeString($b);
+
+        if ($na === '' || $nb === '') {
+            return 0.0;
+        }
+
+        if ($na === $nb) {
+            return 1.0;
+        }
+
+        // Levenshtein similarity
+        $len = max(strlen($na), strlen($nb));
+        $lev = levenshtein($na, $nb);
+        $levScore = $len > 0 ? max(0.0, 1.0 - ($lev / $len)) : 0.0;
+
+        // Partial containment score
+        $contains = (str_contains($na, $nb) || str_contains($nb, $na)) ? 0.8 : 0.0;
+
+        return max($levScore, $contains);
+    }
+
+    private function normalizeString(string $s): string
+    {
+        $s = mb_strtolower($s);
+        // Remove punctuation
+        $s = preg_replace('/[\p{P}\p{S}]+/u', ' ', $s) ?? '';
+        // Remove common stop-words and credit words
+        $stop = [' the ', ' a ', ' and ', ' feat ', ' ft ', ' featuring '];
+        $s = ' ' . preg_replace('/\s+/', ' ', trim($s)) . ' ';
+        foreach ($stop as $st) {
+            $s = str_replace($st, ' ', $s);
+        }
+        return trim(preg_replace('/\s+/', ' ', $s) ?? '');
+    }
+
+    private function yearSimilarity(int $a, int $b): float
+    {
+        if ($a === 0 || $b === 0) {
+            return 0.0;
+        }
+        if ($a === $b) return 1.0;
+        $diff = abs($a - $b);
+        return match (true) {
+            $diff === 1 => 0.8,
+            $diff === 2 => 0.6,
+            default => 0.0,
+        };
     }
 
     /**
@@ -164,27 +259,22 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
     {
         $filename = pathinfo($this->music->filepath, PATHINFO_FILENAME);
 
-        return str($filename)->replace(['(', ')', '[', ']', '{', '}', '_', '-'], ' ')->toString();
+        // Remove bracketed/parenthetical content
+        $filename = preg_replace('/\[.*?\]/', ' ', $filename) ?? $filename;
+        $filename = preg_replace('/\(.*?\)/', ' ', $filename) ?? $filename;
+        $filename = preg_replace('/\{.*?\}/', ' ', $filename) ?? $filename;
 
-        // Clean up the filename - remove common unwanted parts
-        $unwantedPatterns = [
-            '/\[.*?\]/',           // Remove [brackets content]
-            '/\(.*?\)/',           // Remove (parentheses content)
-            '/\{.*?\}/',           // Remove {braces content}
-            '/_+/',                // Replace multiple underscores with single space
-            '/\s+/',               // Replace multiple spaces with single space
-            '/^\d+\.?\s*/',        // Remove leading track numbers
-            '/\.(mp3|flac|wav|m4a|ogg)$/i', // Remove file extensions (just in case)
-        ];
+        // Remove leading track numbers like "01.", "01 -", "01_"
+        $filename = preg_replace('/^\s*\d{1,3}[\.-_\s]+/u', ' ', $filename) ?? $filename;
 
-        foreach ($unwantedPatterns as $pattern) {
-            if ($pattern === '/_+/' || $pattern === '/\s+/') {
-                $filename = preg_replace($pattern, ' ', $filename);
-            } else {
-                $filename = preg_replace($pattern, '', $filename);
-            }
-        }
+        // Replace separators with spaces
+        $filename = str_replace(['_', '-'], ' ', $filename);
 
-        return trim($filename);
+        // Collapse multiple whitespace
+        $filename = preg_replace('/\s+/', ' ', $filename) ?? $filename;
+
+        $cleaned = trim($filename);
+
+        return mb_strlen($cleaned) >= 3 ? $cleaned : '';
     }
 }
