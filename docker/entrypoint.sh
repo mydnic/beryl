@@ -57,6 +57,10 @@ echo "Clearing application caches..."
 php artisan optimize:clear
 php artisan optimize
 
+# Flush failed jobs to start with a clean failed_jobs table
+echo "Flushing failed jobs..."
+php artisan queue:flush || true
+
 # Set proper permissions
 echo "Setting proper permissions..."
 chown -R www-data:www-data /var/www/storage
