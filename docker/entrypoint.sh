@@ -29,6 +29,12 @@ chown www-data:www-data /var/log/php-fpm-www.log
 sed -i '/^error_log[ ]*=.*/d' /usr/local/etc/php-fpm.d/www.conf
 sed -i '/^error_log[ ]*=.*/d' /usr/local/etc/php-fpm.conf
 
+# Configure PHP memory limit (applies to both FPM and CLI)
+mkdir -p /usr/local/etc/php/conf.d
+echo "Setting PHP memory_limit to 512M"
+echo "; Custom memory limit set by entrypoint" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
+echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/zz-memory-limit.ini
+
 # Check if vendor directory is empty
 if [ ! -d /var/www/vendor ] || [ -z "$(ls -A /var/www/vendor)" ]; then
     echo "Installing Composer dependencies..."
