@@ -24,12 +24,31 @@ class MusicController extends Controller
 
         // Handle search
         if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'LIKE', "%{$search}%")
-                  ->orWhere('artist', 'LIKE', "%{$search}%")
-                  ->orWhere('album', 'LIKE', "%{$search}%")
-                  ->orWhere('filepath', 'LIKE', "%{$search}%");
+            $search = trim($request->get('search'));
+            // Split by whitespace to support multi-term search (e.g., "avicii Edom")
+            $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            $query->where(function ($outer) use ($terms, $search) {
+                if (count($terms) <= 1) {
+                    // Single term behavior (backward compatible)
+                    $like = "%{$search}%";
+                    $outer->where('title', 'LIKE', $like)
+                        ->orWhere('artist', 'LIKE', $like)
+                        ->orWhere('album', 'LIKE', $like)
+                        ->orWhere('filepath', 'LIKE', $like);
+                    return;
+                }
+
+                // For multiple terms: require ALL terms to be present in any of the fields (AND of ORs)
+                foreach ($terms as $term) {
+                    $outer->where(function ($q) use ($term) {
+                        $like = "%{$term}%";
+                        $q->where('title', 'LIKE', $like)
+                          ->orWhere('artist', 'LIKE', $like)
+                          ->orWhere('album', 'LIKE', $like)
+                          ->orWhere('filepath', 'LIKE', $like);
+                    });
+                }
             });
         }
 
