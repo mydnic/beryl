@@ -57,8 +57,7 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Copy entrypoint scripts
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
-COPY docker/scheduler-entrypoint.sh /usr/local/bin/scheduler-entrypoint
-RUN chmod +x /usr/local/bin/entrypoint /usr/local/bin/scheduler-entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
 
 # Install nginx and supervisor
 RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
