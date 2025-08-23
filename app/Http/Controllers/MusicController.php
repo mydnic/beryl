@@ -135,17 +135,43 @@ class MusicController extends Controller
             require_once base_path('vendor/james-heinrich/getid3/getid3/getid3.php');
             require_once base_path('vendor/james-heinrich/getid3/getid3/write.php');
 
-            // Initialize getID3 tag writer
+            // Initialize getID3 tag writer with proper format per file type
             $getID3 = new getID3_writetags();
             $getID3->filename = $music->filepath;
-            $getID3->tagformats = ['id3v1', 'id3v2.3'];
+
+            $extension = strtolower(pathinfo($music->filepath, PATHINFO_EXTENSION));
+            switch ($extension) {
+                case 'flac':
+                case 'ogg':
+                    // FLAC/OGG use Vorbis Comments
+                    $getID3->tagformats = ['vorbiscomment'];
+                    break;
+                case 'm4a':
+                case 'mp4':
+                case 'alac':
+                    // MP4/M4A/ALAC
+                    $getID3->tagformats = ['mp4'];
+                    break;
+                case 'mp3':
+                default:
+                    // MP3 (default)
+                    $getID3->tagformats = ['id3v1', 'id3v2.3'];
+                    break;
+            }
+
+            // Ensure we don't leave invalid tag types on files (e.g., ID3 tags on FLAC)
+            $getID3->remove_other_tags = true;
             $getID3->overwrite_tags = true;
             $getID3->tag_encoding = 'UTF-8';
+
+            // Provide common fields; include both 'year' and 'date' for broader compatibility
+            $year = $metadata['year'] ?? '';
             $getID3->tag_data = [
                 'title'  => [$metadata['title'] ?? ''],
                 'artist' => [$metadata['artist'] ?? ''],
                 'album'  => [$metadata['album'] ?? ''],
-                'year'   => [$metadata['year'] ?? ''],
+                'year'   => [$year],
+                'date'   => [$year],
             ];
 
             // Write the tags
