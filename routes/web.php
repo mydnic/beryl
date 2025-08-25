@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MusicController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\JobController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,8 @@ Route::middleware(['hasUser'])->group(function () {
     // Job monitoring routes
     Route::get('/jobs/stats', [JobController::class, 'stats']);
     Route::delete('/jobs/failed/{id}', [JobController::class, 'deleteFailed']);
+
+    // Settings routes
+    Route::get('/settings', [SettingsController::class, 'index']);
+    Route::post('/settings', [SettingsController::class, 'update']);
 });
