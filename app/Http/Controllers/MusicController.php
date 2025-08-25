@@ -9,6 +9,7 @@ use App\Jobs\SearchMusicMetadataJob;
 use App\Jobs\TriggerMetadataSearchJob;
 use App\Models\Music;
 use App\Services\AudioTagService;
+use App\Actions\Music\RenameMusicFileWithMetadata;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
@@ -144,49 +145,10 @@ class MusicController extends Controller
             $music->need_fixing = false;
             $music->save();
 
-            // Optionally rename file on disk after metadata applied
-            if ((bool) setting('rename_on_apply', false)) {
-                $dir = dirname($music->filepath);
-                $ext = pathinfo($music->filepath, PATHINFO_EXTENSION);
-                $artist = trim((string) ($music->artist ?? '')) ?: 'Unknown Artist';
-                $title  = trim((string) ($music->title  ?? '')) ?: 'Unknown Title';
-
-                // Build a readable, safe filename WITHOUT lowercasing and preserving the dash
-                // Start with "Artist - Title"
-                $base = $artist . ' - ' . $title;
-                // Replace disallowed filename characters with a hyphen (no regex)
-                $sanitized = str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '-', $base);
-                // Replace underscores with spaces, collapse multiple spaces/hyphens, and trim
-                $sanitized = str_replace('_', ' ', $sanitized);
-                $sanitized = preg_replace('/\s+/', ' ', $sanitized);
-                $sanitized = preg_replace('/-+/', '-', $sanitized);
-                $readable = trim($sanitized, " .-\t");
-                if ($readable === '') {
-                    $readable = 'Unknown Artist - Unknown Title';
-                }
-                $candidate = $readable . '.' . $ext;
-
-                $target = $dir . DIRECTORY_SEPARATOR . $candidate;
-                if (!file_exists($target)) {
-                    // ok
-                } else {
-                    // Prevent collisions by appending (n)
-                    $i = 1;
-                    do {
-                        $candidate = $readable . ' (' . $i . ').' . $ext;
-                        $target = $dir . DIRECTORY_SEPARATOR . $candidate;
-                        $i++;
-                    } while (file_exists($target) && $i < 1000);
-                }
-
-                if ($target !== $music->filepath) {
-                    if (!@rename($music->filepath, $target)) {
-                        // If rename fails, keep original path but inform the user
-                        return back()->with('error', 'Metadata applied but failed to rename file.');
-                    }
-                    $music->filepath = $target;
-                    $music->save();
-                }
+            // Optionally rename file on disk after metadata applied (delegated to Action)
+            $ok = app(RenameMusicFileWithMetadata::class)->handle($music);
+            if (!$ok) {
+                return back()->with('error', 'Metadata applied but failed to rename file.');
             }
 
             return back()->with('success', 'Metadata applied successfully');
