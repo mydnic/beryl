@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     nodejs \
     npm \
-    cron
+    cron \
+    libimage-exiftool-perl
 
 # Install Node.js 22.x and Yarn v4
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \

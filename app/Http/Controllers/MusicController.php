@@ -8,8 +8,8 @@ use App\Jobs\SearchMusicMetadataFromFilenameJob;
 use App\Jobs\SearchMusicMetadataJob;
 use App\Jobs\TriggerMetadataSearchJob;
 use App\Models\Music;
+use App\Services\AudioTagService;
 use Exception;
-use getID3_writetags;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
@@ -131,62 +131,16 @@ class MusicController extends Controller
         $metadata = request()->input('metadata');
 
         try {
-            // Create a new getID3 writer object
-            require_once base_path('vendor/james-heinrich/getid3/getid3/getid3.php');
-            require_once base_path('vendor/james-heinrich/getid3/getid3/write.php');
+            app(AudioTagService::class)->applyToMusic($music, $metadata ?? []);
 
-            // Initialize getID3 tag writer with proper format per file type
-            $getID3 = new getID3_writetags();
-            $getID3->filename = $music->filepath;
+            // Sync the tags in the database
+            $music->syncTags();
 
-            $extension = strtolower(pathinfo($music->filepath, PATHINFO_EXTENSION));
-            switch ($extension) {
-                case 'flac':
-                case 'ogg':
-                    // FLAC/OGG use Vorbis Comments
-                    $getID3->tagformats = ['vorbiscomment'];
-                    break;
-                case 'm4a':
-                case 'mp4':
-                case 'alac':
-                    // MP4/M4A/ALAC
-                    $getID3->tagformats = ['mp4'];
-                    break;
-                case 'mp3':
-                default:
-                    // MP3 (default)
-                    $getID3->tagformats = ['id3v1', 'id3v2.3'];
-                    break;
-            }
+            // Mark as no longer needing fixing
+            $music->need_fixing = false;
+            $music->save();
 
-            // Ensure we don't leave invalid tag types on files (e.g., ID3 tags on FLAC)
-            $getID3->remove_other_tags = true;
-            $getID3->overwrite_tags = true;
-            $getID3->tag_encoding = 'UTF-8';
-
-            // Provide common fields; include both 'year' and 'date' for broader compatibility
-            $year = $metadata['year'] ?? '';
-            $getID3->tag_data = [
-                'title'  => [$metadata['title'] ?? ''],
-                'artist' => [$metadata['artist'] ?? ''],
-                'album'  => [$metadata['album'] ?? ''],
-                'year'   => [$year],
-                'date'   => [$year],
-            ];
-
-            // Write the tags
-            if ($getID3->WriteTags()) {
-                // Sync the tags in the database
-                $music->syncTags();
-
-                // Mark as no longer needing fixing
-                $music->need_fixing = false;
-                $music->save();
-
-                return back()->with('success', 'Metadata applied successfully');
-            } else {
-                return back()->with('error', 'Failed to apply metadata: ' . implode(', ', $getID3->errors));
-            }
+            return back()->with('success', 'Metadata applied successfully');
         } catch (Exception $e) {
             return back()->with('error', 'Error applying metadata: ' . $e->getMessage());
         }
