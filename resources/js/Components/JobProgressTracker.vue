@@ -171,25 +171,22 @@ const deleteFailedJob = async (failure) => {
     const confirmed = window.confirm('Remove this failed job from the list?')
     if (!confirmed) return
     deletingIds.add(failure.id)
-    try {
-        const res = await fetch(`/jobs/failed/${failure.id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCsrfToken() || ''
-            }
-        })
-        if (!res.ok) throw new Error('Failed to delete failed job')
-        // Optimistically remove from local state
-        jobStats.value.recent_failed = jobStats.value.recent_failed.filter(j => j.id !== failure.id)
-        // Also refresh counts
-        await refreshStats()
-    } catch (e) {
-        console.error(e)
-        alert('Could not delete failed job.')
-    } finally {
-        deletingIds.delete(failure.id)
-    }
+    router.delete(`/jobs/failed/${failure.id}`, {
+        data: { _token: getCsrfToken() || '' },
+        preserveScroll: true,
+        onSuccess: async () => {
+            // Optimistically remove from local state
+            jobStats.value.recent_failed = jobStats.value.recent_failed.filter(j => j.id !== failure.id)
+            // Also refresh counts
+            await refreshStats()
+        },
+        onError: () => {
+            alert('Could not delete failed job.')
+        },
+        onFinish: () => {
+            deletingIds.delete(failure.id)
+        }
+    })
 }
 
 const getJobTypeIcon = (type) => {

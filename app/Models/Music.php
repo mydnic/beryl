@@ -16,6 +16,7 @@ class Music extends Model
 
     protected $casts = [
         'metadata' => 'array',
+        'need_fixing' => 'boolean',
     ];
 
     protected $appends = ['relative_path'];

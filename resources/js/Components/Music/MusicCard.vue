@@ -56,6 +56,11 @@
                                 }
                             },
                             {
+                                label: 'Doesn\'t need fixing',
+                                icon: 'i-lucide-check-circle-2',
+                                onSelect: markClean
+                            },
+                            {
                                 label: 'Edit Manually',
                                 icon: 'i-lucide-pencil',
                                 onSelect: openEdit
@@ -369,6 +374,21 @@ export default {
 
             // Fermer le tableau de comparaison
             this.selectedResult = null
+        },
+
+        markClean () {
+            this.loading = true
+            this.$inertia.post(`/music/${this.music.id}/mark-clean`, {}, {
+                preserveScroll: true,
+                onFinish: () => {
+                    this.loading = false
+                    const toast = useToast()
+                    toast.add({
+                        title: 'Marked as clean',
+                        description: 'This track will no longer appear in the \'needs fixing\' filter.'
+                    })
+                }
+            })
         }
     }
 }

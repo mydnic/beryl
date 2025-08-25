@@ -139,6 +139,19 @@ class SearchMusicMetadataFromFilenameJob implements ShouldQueue
                 'external_id' => $result['external_id'],
                 'raw_data' => $result['raw_data'],
             ]);
+
+            // If an exact match on all four fields is found, mark as not needing fixing
+            if (
+                !empty($this->music->title) && !empty($this->music->artist) && !empty($this->music->album) && !empty($this->music->release_year) &&
+                isset($result['title'], $result['artist'], $result['album'], $result['release_year']) &&
+                $this->normalizeString((string) $this->music->title) === $this->normalizeString((string) $result['title']) &&
+                $this->normalizeString((string) $this->music->artist) === $this->normalizeString((string) $result['artist']) &&
+                $this->normalizeString((string) $this->music->album) === $this->normalizeString((string) $result['album']) &&
+                (int) $this->music->release_year === (int) $result['release_year']
+            ) {
+                $this->music->need_fixing = false;
+                $this->music->save();
+            }
         }
     }
 
